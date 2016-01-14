@@ -35,7 +35,6 @@ exports.getCoords = function (filename) {
 	var wgs84 = gdal.SpatialReference.fromEPSG(4326)
 	var coord_transform = new gdal.CoordinateTransformation(ds.srs, wgs84)
 
-	console.log('Corner Coordinates:')
 	var coordinates = {}
 	var corner_names = Object.keys(corners)
 	corner_names.forEach(function(corner_name) {
@@ -52,10 +51,10 @@ exports.getCoords = function (filename) {
 		var lon_dms = gdal.decToDMS(pt_wgs84.x, 'Long')
 		var dd = dmsToDd( lat_dms, lon_dms ) // convert to decimal degrees
 		var description = util.format('%s (%s, %s)', corner_name, dd.lat, dd.lon );
-		console.log(description)
 		coordinates[corner_name] = {lat: dd.lat, lon: dd.lon }
 	});
 
+	process.stdout.write("COORDINATES: \n" + jsonFormat(coordinates) );
 	return coordinates
 }
 

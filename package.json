@@ -2,6 +2,10 @@
   "name": "generateSubjectsFromPlanetAPI",
   "description": "Create Zooniverse subjedcts using Planet Labs API to get images by area of interest (AOI).",
   "license": "BSD-2-Clause",
+  "scripts": {
+    "planet-api-test": "node planet-api-test.js",
+    "geo-coords-test": "node geo-coords-test.js data/L15-1509E-1188N.tif"
+  },
   "dependencies": {
     "request": "~2.67.0",
     "gdal": "~0.8.0",

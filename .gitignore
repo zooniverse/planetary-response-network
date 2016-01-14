@@ -1,3 +1,4 @@
 node_modules
 data/*.tif
 data/*.png
+data/*.json

@@ -6,19 +6,8 @@ var util       = require('util')
 var jsonFormat = require('json-format')
 var fs         = require('fs')
 
-var filename = process.argv[2]
-if (!filename) {
-	console.error('Filename must be provided')
-	process.exit(1)
-}
-
-var basename = filename.split('/').reverse()[0].split('.')[0] // strip everything from filename (including extension)
-
-coordinates = getImageCoordinates(filename)
-writeCoordinatesToJSON( 'data/' + basename + '.json', coordinates)
-
 /* Read GeoTIF and extract reference coordinates */
-function getImageCoordinates(filename){
+exports.getCoords = function (filename) {
 	var ds = gdal.open(filename)
 
 	var driver = ds.driver;
@@ -71,17 +60,16 @@ function getImageCoordinates(filename){
 }
 
 /* Append/replace image corner coordinates in JSON file */
-function writeCoordinatesToJSON(filename, coordinates){
+exports.writeToJSON = function (filename, coordinates) {
 	var file_content = fs.readFileSync( filename )
 	var content = JSON.parse(file_content)
 
 	content['reference_coordinates'] = coordinates
 	fs.writeFileSync(filename, jsonFormat(content));
-
 }
 
 /* Convert DMS to decimal degrees */
-function dmsToDd(lat, lon){
+function dmsToDd (lat, lon) {
 	lat = parseFloat( lat.split('d')[0] ) + parseFloat( lat.split('\'')[0].split('d')[1] )/60 + parseFloat( lat.split('\'')[1].split('\"')[0] )/3600
 	lon = parseFloat( lon.split('d')[0] ) + parseFloat( lon.split('\'')[0].split('d')[1] )/60 + parseFloat( lon.split('\'')[1].split('\"')[0] )/3600
 	return {lat: lat, lon: lon}

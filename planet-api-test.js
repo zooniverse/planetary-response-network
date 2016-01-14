@@ -7,7 +7,7 @@ var key = process.env.PLANET_API_KEY
 
 // bounds obtained from Google Earth (KML), then converted to GeoJSON
 
-// k-town, los angeles
+// // k-town, los angeles
 // var bounds =
 //   [ [-118.2979050488487,34.07723373596225],
 //     [-118.3019228239179,34.07724912524296],

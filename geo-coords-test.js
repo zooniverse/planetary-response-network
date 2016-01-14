@@ -1,4 +1,4 @@
-geoCoords = require('./geo-coords.js')
+geoCoords = require('./modules/geo-coords.js')
 
 var filename = process.argv[2]
 if (!filename) {

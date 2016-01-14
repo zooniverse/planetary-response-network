@@ -1,4 +1,4 @@
-planetAPI = require('./planet-api.js')
+planetAPI = require('./modules/planet-api.js')
 
 // var url = "https://api.planet.com/v0/scenes/ortho/"
 // var url = "https://api.planet.com/v0/mosaics/nepal_landsat_prequake_mosaic/quads/"

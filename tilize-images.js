@@ -88,8 +88,7 @@ async.series(task_list, function (err, result) {
 // for debugging: edge of runway at Kathmandu airport
 // console.log( pxToGeo( 2582,3406, size.x, size.y, reference_coordinates ) );
 
-/* Convert corner and center pixels to geographical coordinates
-   TODO handle meridian/parallels */
+/* Convert corner and center pixels to geographical coordinates */
 function pxToGeo( x, y, wid, hei, reference_coordinates ){
   delta_lon = Math.abs( reference_coordinates.upper_right.lon - reference_coordinates.upper_left.lon )
   delta_lat = Math.abs( reference_coordinates.upper_right.lat - reference_coordinates.bottom_right.lat )

@@ -74,13 +74,14 @@ async.series(task_list, function (err, result) {
     if (err) {
       console.error(err);
     }
-    // console.log('All tasks completed successfully.');
+    csvStringify(csv_content, function(err, output){
+      console.log('Tiles created; writing manifest...');
+      fs.writeFileSync('data/manifest.csv', output);
+      console.log('done.')
+    });
 });
 
 
-csvStringify(csv_content, function(err, output){
-  console.log(output);
-});
 
 
 // for debugging: edge of runway at Kathmandu airport

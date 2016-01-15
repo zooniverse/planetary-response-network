@@ -4,6 +4,7 @@ var jsonFormat   = require('json-format')
 var util         = require('util')
 var csvStringify = require('csv-stringify')
 var async        = require('async')
+var path         = require('path')
 
 var tile_wid = 480;
 var tile_hei = 480;
@@ -15,7 +16,7 @@ if (!filename) {
 	process.exit(1)
 }
 
-var basename = filename.split('/').reverse()[0].split('.')[0] // strip everything from filename (including extension)
+var basename = path.basename(filename).split('.')[0] // strip everything from filename (including extension)
 
 var content  = JSON.parse( fs.readFileSync( 'data/' + basename + '.json' ) )
 var size = content.metadata.size

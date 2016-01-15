@@ -45,7 +45,7 @@ for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=step_x, row++) {
 
     task_list.push(
       async.apply(
-        im.convert, [ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', outfilename ]
+        im.convert, [ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ]
       )
     )
 

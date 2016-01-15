@@ -37,7 +37,7 @@ for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=tile_wid, row++) {
 
     task_list.push(
       async.apply(
-        im.convert, [ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', outfilename ] 
+        im.convert, [ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', outfilename ]
       )
     )
 
@@ -85,5 +85,4 @@ function pxToGeo( x, y, wid, hei, reference_coordinates ){
   offset_lon = x * delta_lon / wid;
   offset_lat = y * delta_lat / hei;
   return {lon: reference_coordinates.upper_left.lon + offset_lon, lat: reference_coordinates.upper_right.lat - offset_lat}
-  // return parseFloat(reference_coordinates.upper_right.lat - offset_lat) + ',' + parseFloat(reference_coordinates.upper_left.lon + offset_lon)
 }

@@ -31,7 +31,7 @@ var reference_coordinates = content.metadata.reference_coordinates
 
 // create csv header
 var csv_content = []
-csv_content.push( [ 'image_file', 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat' ] )
+csv_content.push( [ 'image_file', 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ] )
 
 var task_list = []
 
@@ -54,6 +54,7 @@ for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=step_x, row++) {
     var upper_right  = pxToGeo( offset_x + tile_wid, offset_y, size.x, size.y, reference_coordinates)
     var bottom_right = pxToGeo( offset_x + tile_wid, offset_y + tile_hei, size.x, size.y, reference_coordinates)
     var bottom_left  = pxToGeo( offset_x, offset_y + tile_hei, size.x, size.y, reference_coordinates)
+    var center       = pxToGeo( offset_x + tile_wid / 2, offset_y + tile_hei / 2, size.x, size.y, reference_coordinates) // NOT (lower_right.lat - upper_left.lat, lower_right.lon - upper_left.lon) because meridians and parallels
 
     // // for debugging
     // console.log('upper_left: ',   pxToGeo( offset_x,            offset_y,            size.x, size.y, reference_coordinates) )
@@ -62,7 +63,7 @@ for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=step_x, row++) {
     // console.log('bottom_left: ',  pxToGeo( offset_x,            offset_y + tile_hei, size.x, size.y, reference_coordinates) )
     // console.log('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
 //
-    var subject_entry = [ outfilename, upper_left.lon, upper_left.lat, upper_right.lon, upper_right.lat, bottom_right.lon, bottom_right.lat, bottom_left.lon, bottom_left.lat ]
+    var subject_entry = [ outfilename, upper_left.lon, upper_left.lat, upper_right.lon, upper_right.lat, bottom_right.lon, bottom_right.lat, bottom_left.lon, bottom_left.lat, center.lon, center.lat ]
     csv_content.push( subject_entry )
 
   }
@@ -87,7 +88,8 @@ async.series(task_list, function (err, result) {
 // for debugging: edge of runway at Kathmandu airport
 // console.log( pxToGeo( 2582,3406, size.x, size.y, reference_coordinates ) );
 
-/* Convert corner and center pixels to geographical coordinates */
+/* Convert corner and center pixels to geographical coordinates
+   TODO handle meridian/parallels */
 function pxToGeo( x, y, wid, hei, reference_coordinates ){
   delta_lon = Math.abs( reference_coordinates.upper_right.lon - reference_coordinates.upper_left.lon )
   delta_lat = Math.abs( reference_coordinates.upper_right.lat - reference_coordinates.bottom_right.lat )

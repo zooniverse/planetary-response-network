@@ -10,13 +10,17 @@ var yargs        = require('yargs')
 var argv = yargs
     .usage('$0 [options] filename')
     .describe('tile-size', 'Pixel size for tiles')
+    .describe('overlap', 'Pixel amount by which to overlap tiles')
     .default('tile-size', 480)
+    .default('overlap', 160)
     .demand(1)
     .argv
 
 var tile_wid = argv.tileSize;
 var tile_hei = argv.tileSize;
-// var overlap  = 160; // overlap by pixels
+var overlap  = argv.overlap;
+var step_x = tile_wid - overlap;
+var step_y = tile_hei - overlap;
 
 var filename = argv._[0]
 var basename = path.basename(filename).split('.')[0] // strip everything from filename (including extension)
@@ -31,8 +35,8 @@ csv_content.push( [ 'image_file', 'upper_left_lon', 'upper_left_lat', 'upper_rig
 
 var task_list = []
 
-for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=tile_wid, row++) {
-  for( var offset_y=0, col=0; offset_y<=size.y; offset_y+=tile_hei, col++) {
+for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=step_x, row++) {
+  for( var offset_y=0, col=0; offset_y<=size.y; offset_y+=step_y, col++) {
 
     // crop current tile
     var outfilename = 'data/' + basename + '_' + row + '_' + col + '.png'

@@ -39,10 +39,6 @@ Run `npm run-script geo-coords-test` on the CLI. This will extract the coordinat
 ```
 
 ### Generating Tiles
-Still underway. A quick solution is to use ImageMagick:
-
-```
-convert -limit map 0 -limit memory 0 L15-1509E-1188N.tif -crop 640x640 -background black -extent 640x640 -gravity center -compose Copy -set filename:tile "%[fx:page.x/640]_%[fx:page.y/640]" +repage +adjoin tile-%[filename:tile].png
-```
+Run `npm run-script tilize-images` on the CLI. This will split one of the downloaded mosaic GeoTIFs (`data/L15-1509E-1188N.tif`) into tiles 480px square, with 160px overlap between tiles and write a subject set file (`data/manifest.csv`) ready to upload to Panoptes. For customisation options, run `node tilize-images`.
 
 TO DO: Interpolate geo coords of individual tiles and generate metadata. Creating subjects and loading into Panoptes follows.

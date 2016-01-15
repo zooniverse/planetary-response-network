@@ -2,10 +2,8 @@
 Create Zooniverse subjects via Planet Labs API using area of interest (AOI) queries.
 
 ## Getting Started
-__Disclaimer: I lied.__ The current implementation does not yet generate subjects. It does, however, do a few things to that end.
-
 Clone and `npm install`. You'll need a key to the Planet API and set it in the `PLANET_API_KEY` environmental variable.
-There are two scripts set up to demonstrate what's currently implemented.
+There are three scripts set up to demonstrate what's currently implemented.
 
 ### Fetching Mosaics by Area of Interest (AOI)
 Run `npm run-script planet-api-test` on the CLI to access the API and fetch mosaics intersecting with a polygonal AOI inscribing central Kathmandu. This should download two GeoTIF files in the `/data` directory along with corresponding JSON files containing the "Features" hash. This will be useful in the future for retrieving metadata and digging through individual scenes that make up the mosaic. It's also used as a placeholder to append the geo coordinates we'll calculate next.

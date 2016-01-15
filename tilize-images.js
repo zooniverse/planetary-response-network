@@ -5,17 +5,20 @@ var util         = require('util')
 var csvStringify = require('csv-stringify')
 var async        = require('async')
 var path         = require('path')
+var yargs        = require('yargs')
 
-var tile_wid = 480;
-var tile_hei = 480;
+var argv = yargs
+    .usage('$0 [options] filename')
+    .describe('tile-size', 'Pixel size for tiles')
+    .default('tile-size', 480)
+    .demand(1)
+    .argv
+
+var tile_wid = argv.tileSize;
+var tile_hei = argv.tileSize;
 // var overlap  = 160; // overlap by pixels
 
-var filename = process.argv[2]
-if (!filename) {
-	console.error('Filename must be provided')
-	process.exit(1)
-}
-
+var filename = argv._[0]
 var basename = path.basename(filename).split('.')[0] // strip everything from filename (including extension)
 
 var content  = JSON.parse( fs.readFileSync( 'data/' + basename + '.json' ) )

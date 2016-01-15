@@ -12,6 +12,7 @@
     "async": "~1.5.2",
     "imagemagick": "~0.1.3",
     "json-format": "~0.1.1",
-    "csv-stringify": "0.0.8"
+    "csv-stringify": "0.0.8",
+    "yargs": "^3.31.0"
   }
 }

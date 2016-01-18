@@ -1,3 +1,6 @@
+var jsdom = require('jsdom').jsdom
+var tj    = require('togeojson')
+var fs    = require('fs')
 planetAPI = require('./modules/planet-api.js')
 
 // var url = "https://api.planet.com/v0/scenes/ortho/"
@@ -22,17 +25,9 @@ var key = process.env.PLANET_API_KEY
 //     [-118.2979050488487,34.07723373596225] ]
 
 // central kathmandu
-var bounds =
-  [ [85.31790371515265,27.74112247549664,0],
-    [85.29471858829717,27.72571509606928,0],
-    [85.29413862454905,27.6938172811564,0],
-    [85.31838875561394,27.67944111681705,0],
-    [85.34663714286582,27.67782735898242,0],
-    [85.36838931902295,27.68205287088499,0],
-    [85.37743011085362,27.70303837353786,0],
-    [85.37132696978759,27.72918006286135,0],
-    [85.3473677598608,27.74063311882999,0],
-    [85.31790371515265,27.74112247549664,0] ]
+var kml = jsdom(fs.readFileSync('data/central-cathmandu.kml'));
+var geoJSON = tj.kml(kml)
+var bounds = geoJSON.features[0].geometry.coordinates[0]
 
 /* Call Planet API and download GeoTIF and accompanying JSON files */
 planetAPI.fetchMosaicFromAOI( bounds, url, key)

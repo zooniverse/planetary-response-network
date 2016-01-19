@@ -4,7 +4,8 @@
   "license": "BSD-2-Clause",
   "scripts": {
     "planet-api-test": "node planet-api-test.js",
-    "geo-coords-test": "node geo-coords-test.js data/L15-1509E-1188N.tif"
+    "geo-coords-test": "node geo-coords-test.js data/L15-1509E-1188N.tif",
+    "tilize-test": "node tilize-images.js data/L15-1509E-1188N.tif"
   },
   "dependencies": {
     "async": "~1.5.2",

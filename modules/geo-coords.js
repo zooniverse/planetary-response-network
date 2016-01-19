@@ -1,13 +1,13 @@
 /* adapted from
- * https://github.com/naturalatlas/node-gdal/blob/master/examples/gdalinfo.js
+ * 2
  */
 var gdal       = require('gdal')
 var util       = require('util')
 var jsonFormat = require('json-format')
 var fs         = require('fs')
 
-/* Read GeoTIF and extract reference coordinates */
-exports.getCoords = function (filename) {
+/* Read GeoTIF and extract metadata e.g. size, reference coordinates */
+exports.getMetadata = function (filename) {
 	var ds = gdal.open(filename)
 
 	var driver = ds.driver;
@@ -54,16 +54,16 @@ exports.getCoords = function (filename) {
 		coordinates[corner_name] = {lat: dd.lat, lon: dd.lon }
 	});
 
+	process.stdout.write("SIZE: \n" + jsonFormat(size) );
 	process.stdout.write("COORDINATES: \n" + jsonFormat(coordinates) );
-	return coordinates
+	return { size: size, reference_coordinates: coordinates }
 }
 
 /* Append/replace image corner coordinates in JSON file */
-exports.writeToJSON = function (filename, coordinates) {
+exports.writeMetaToJSON = function (filename, metadata) {
 	var file_content = fs.readFileSync( filename )
 	var content = JSON.parse(file_content)
-
-	content['reference_coordinates'] = coordinates
+	content['metadata'] = metadata
 	fs.writeFileSync(filename, jsonFormat(content));
 }
 

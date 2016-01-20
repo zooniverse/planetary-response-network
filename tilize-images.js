@@ -27,7 +27,6 @@ var basename = path.basename(filename).split('.')[0] // strip everything from fi
 var dirname  = path.dirname(filename)
 
 var content = JSON.parse( fs.readFileSync( dirname + '/' + basename + '.json' ) )
-console.log('CONTENT = ', content);
 var size = content.metadata.size
 var reference_coordinates = content.metadata.reference_coordinates
 

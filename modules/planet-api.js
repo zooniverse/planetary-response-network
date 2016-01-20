@@ -5,10 +5,10 @@ var jsonFormat = require('json-format')
 var async      = require('async')
 
 /* Sequentially download "before" and "after" mosaics */
-function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, key){
+function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds){
   async.series([
-    async.apply( fetchMosaicFromAOI, bounds, before_url, 'before', key ),
-    async.apply( fetchMosaicFromAOI, bounds, after_url,  'after',  key )
+    async.apply( fetchMosaicFromAOI, bounds, before_url, 'before'),
+    async.apply( fetchMosaicFromAOI, bounds, after_url,  'after')
   ], function (error, result){
       if (error) console.error(error);
       console.log('Completed fetching before/after mosaics!');
@@ -16,7 +16,7 @@ function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, key){
 }
 
 /* Downloads a GeoTIF mosaic quad */
-function fetchMosaicFromAOI (bounds, url, label, key, callback){
+function fetchMosaicFromAOI (bounds, url, label, callback){
 
   console.log('Fetching ' + label + ' mosaics intersecting with AOI...');
 
@@ -27,14 +27,12 @@ function fetchMosaicFromAOI (bounds, url, label, key, callback){
 
   var params = { intersects: intersects }
 
-  // send request to api
-  auth = "Basic " + new Buffer(key + ":").toString("base64") // note: scoped to entire module
   request({
       url: url,
       qs: params,
       method: "GET",
       headers: {
-          "Authorization": auth
+          "Authorization": "Basic " + new Buffer(process.env.PLANET_API_KEY + ":").toString("base64")
       },
   }, function (error, response, body) {
       if (!error) {
@@ -84,9 +82,8 @@ function downloadFile(url, dest, callback){
   var out = request({
       url: url,
       method: "GET",
-      headers: { "Authorization": auth }
+      headers: { "Authorization": "Basic " + new Buffer(process.env.PLANET_API_KEY + ":").toString("base64") }
   });
-
   out.on('response', function (resp) {
       if (resp.statusCode === 200){
         out.pipe(localStream);

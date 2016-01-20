@@ -13,17 +13,15 @@ var planetAPI = require('./modules/planet-api.js')
 var before_url = 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/'
 var after_url  = 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/'
 
-var key = process.env.PLANET_API_KEY
-
 var kml = jsdom(fs.readFileSync('data/central-kathmandu.kml'));
 var geoJSON = tj.kml(kml)
 var bounds = geoJSON.features[0].geometry.coordinates[0]
 
 /* Call Planet API and download GeoTIF and accompanying JSON files */
-// planetAPI.fetchMosaicFromAOI( bounds, before_url, 'foo', key)
+// planetAPI.fetchMosaicFromAOI( bounds, before_url, 'foo')
 
 
-planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds, key)
+planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds)
 
 // /* Process each GeoTIF file that was dowloaded */
 //

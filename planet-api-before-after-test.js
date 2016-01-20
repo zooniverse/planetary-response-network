@@ -20,10 +20,10 @@ var geoJSON = tj.kml(kml)
 var bounds = geoJSON.features[0].geometry.coordinates[0]
 
 /* Call Planet API and download GeoTIF and accompanying JSON files */
-planetAPI.fetchMosaicFromAOI( bounds, before_url, 'foo', key)
+// planetAPI.fetchMosaicFromAOI( bounds, before_url, 'foo', key)
 
 
-// planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds, key)
+planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds, key)
 
 // /* Process each GeoTIF file that was dowloaded */
 //

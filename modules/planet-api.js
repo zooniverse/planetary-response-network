@@ -4,14 +4,19 @@ var fs         = require('fs')
 var jsonFormat = require('json-format')
 var async      = require('async')
 
-function fetchBeforeAndAfterMosaicFromAOI ( before_url, after_url, bounds, key){
-  console.log('Fetching before/after mosaics intersecting with AOI...')
-  fetchMosaicFromAOI(bounds, before_url, 'before', key)
-  fetchMosaicFromAOI(bounds, after_url, 'after', key)
+/* Sequentially download "before" and "after" mosaics */
+function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, key){
+  async.series([
+    async.apply( fetchMosaicFromAOI, bounds, before_url, 'before', key ),
+    async.apply( fetchMosaicFromAOI, bounds, after_url,  'after',  key )
+  ], function (error, result){
+      if (error) console.error(error);
+      console.log('Completed fetching before/after mosaics!');
+  })
 }
 
 /* Downloads a GeoTIF mosaic quad */
-function fetchMosaicFromAOI ( bounds, url, label, key ){
+function fetchMosaicFromAOI (bounds, url, label, key, callback){
 
   console.log('Fetching ' + label + ' mosaics intersecting with AOI...');
 
@@ -21,9 +26,9 @@ function fetchMosaicFromAOI ( bounds, url, label, key ){
   })
 
   var params = { intersects: intersects }
-  auth = "Basic " + new Buffer(key + ":").toString("base64") // note: scoped to entire module
 
   // send request to api
+  auth = "Basic " + new Buffer(key + ":").toString("base64") // note: scoped to entire module
   request({
       url: url,
       qs: params,
@@ -34,15 +39,7 @@ function fetchMosaicFromAOI ( bounds, url, label, key ){
   }, function (error, response, body) {
       if (!error) {
           var data = JSON.parse(body)
-
-          //
-
-          // /* List quad ids */
-          // for(var i in data.features){
-          //   console.log(data.features[i].id);
-          // }
-
-          processFeatures(data.features, label, function(result){ console.log('DOWNLOAD LIST: ', result ); } ) // download images and data
+          processFeatures(data.features, label, function(result){ callback(null, result); } ) // download images and data
       }
   })
 }
@@ -76,7 +73,6 @@ function processFeatures(features, label, callback){
   /* Download files from list */
   async.parallel(task_list, function (err, result) {
     if (err) console.error(err);
-    console.log('All downloads completed successfully: ', result);
     callback(result)
   });
 
@@ -96,7 +92,7 @@ function downloadFile(url, dest, callback){
         out.pipe(localStream);
         localStream.on('close', function () {
           console.log('  File ' + dest + ' transfer complete.')
-          callback(null,dest) // return path to downloaded file
+          callback(null, dest) // return path to downloaded file
         });
       }
   })

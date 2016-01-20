@@ -25,34 +25,28 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 // planetAPI.fetchMosaicFromAOI( bounds, before_url, 'foo')
 
 
-planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds )
+planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
+  function(moments){
+    // var moments = [ [ 'data/L15-1509E-1187N_before.tif', 'data/L15-1509E-1188N_before.tif' ],
+    //             [ 'data/L15-1509E-1187N_after.tif', 'data/L15-1509E-1188N_after.tif' ] ]
 
-// // test code
-// var moments = [ [ 'data/L15-1509E-1187N_before.tif', 'data/L15-1509E-1188N_before.tif' ],
-//             [ 'data/L15-1509E-1187N_after.tif', 'data/L15-1509E-1188N_after.tif' ] ]
-// handleDownloadedImages(moments)
-//
-// function handleDownloadedImages(moments){
-//   var task_list = []
-//   for(var i=0; i<moments.length; i++){
-//     regions = moments[i];
-//     console.log('MOMENT: ', moments[i] );
-//
-//     for(var j=0; j<regions.length; j++){
-//       image_file = regions[j]
-//       console.log('REGION: ', regions[j] );
-//
-//       task_list.push( async.apply( tilizeImage, image_file ) )
-//     }
-//
-//   }
-//
-//   console.log('Tilizing images...');
-//   async.series( task_list, function(error, result) {
-//     console.log('Finished tilizing images!');
-//   })
-//
-// }
+    var task_list = []
+    for(var i=0; i<moments.length; i++){
+      regions = moments[i];
+      // console.log('MOMENT: ', moments[i] );
+      for(var j=0; j<regions.length; j++){
+        image_file = regions[j]
+        // console.log('REGION: ', regions[j] );
+        task_list.push( async.apply( tilizeImage, image_file ) )
+      }
+    }
+
+    console.log('Tilizing images...');
+    async.series( task_list, function(error, result) {
+      console.log('Finished tilizing images!');
+    })
+  }
+)
 
 function tilizeImage(filename, callback){
   var basename = path.basename(filename).split('.')[0] // strip everything from filename (including extension)

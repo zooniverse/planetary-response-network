@@ -29,22 +29,23 @@ function fetchMosaicFromAOI (bounds, url, label, callback){
   var params = { intersects: intersects }
 
   request({
-      url: url,
-      qs: params,
-      method: "GET",
-      headers: {
-          "Authorization": "Basic " + new Buffer(process.env.PLANET_API_KEY + ":").toString("base64")
-      },
-  }, function (error, response, body) {
-      if (!error) {
-          var data = JSON.parse(body)
-          console.log('Found ' + data.features.length + ' mosaics.');
-          processFeatures(data.features, label,
-            function(result){
-              if(callback) callback(null, result)
-            }
-          ) // download images and data
-      }
+    url: url,
+    qs: params,
+    method: "GET",
+    headers: {
+        "Authorization": "Basic " + new Buffer(process.env.PLANET_API_KEY + ":").toString("base64")
+    },
+  }, 
+  function (error, response, body) {
+    if (!error) {
+        var data = JSON.parse(body)
+        console.log('Found ' + data.features.length + ' mosaics.');
+        processFeatures(data.features, label,
+          function(result){
+            if(callback) callback(null, result)
+          }
+        ) // download images and data
+    }
   })
 }
 

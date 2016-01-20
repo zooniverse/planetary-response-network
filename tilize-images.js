@@ -6,6 +6,7 @@ var csvStringify = require('csv-stringify')
 var async        = require('async')
 var path         = require('path')
 var yargs        = require('yargs')
+var exiv2        = require('exiv2')
 
 var argv = yargs
     .usage('$0 [options] filename')
@@ -44,18 +45,25 @@ for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=step_x, row++) {
     var crop_option = tile_wid + 'x' + tile_hei + '+' + offset_x + '+' + offset_y
     var extent_option = tile_wid + 'x' + tile_hei
 
+    console.log('FOO: ', pxToGeo( offset_x, offset_y, size.x, size.y, reference_coordinates));
+
     task_list.push(
       async.apply(
         im.convert, [ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ]
       )
     )
 
+
     /* Convert corner and center pixel coordinates to geo */
-    var upper_left   = pxToGeo( offset_x, offset_y, size.x, size.y, reference_coordinates)
-    var upper_right  = pxToGeo( offset_x + tile_wid, offset_y, size.x, size.y, reference_coordinates)
-    var bottom_right = pxToGeo( offset_x + tile_wid, offset_y + tile_hei, size.x, size.y, reference_coordinates)
-    var bottom_left  = pxToGeo( offset_x, offset_y + tile_hei, size.x, size.y, reference_coordinates)
-    var center       = pxToGeo( offset_x + tile_wid / 2, offset_y + tile_hei / 2, size.x, size.y, reference_coordinates) // NOT (lower_right.lat - upper_left.lat, lower_right.lon - upper_left.lon) because meridians and parallels
+    coords = {foo: "bar"}
+    //   upper_left   : pxToGeo( offset_x, offset_y, size.x, size.y, reference_coordinates)
+    //   upper_right  : pxToGeo( offset_x + tile_wid, offset_y, size.x, size.y, reference_coordinates)
+    //   bottom_right : pxToGeo( offset_x + tile_wid, offset_y + tile_hei, size.x, size.y, reference_coordinates)
+    //   bottom_left  : pxToGeo( offset_x, offset_y + tile_hei, size.x, size.y, reference_coordinates)
+    //   center       : pxToGeo( offset_x + tile_wid / 2, offset_y + tile_hei / 2, size.x, size.y, reference_coordinates) // NOT (lower_right.lat - upper_left.lat, lower_right.lon - upper_left.lon) because meridians and parallels
+    /* Write coordinates to tile image metadata */
+    writeImgMeta(outfilename, coords)
+    readImgMeta(outfilename)
 
     // // for debugging
     // console.log('upper_left: ',   pxToGeo( offset_x,            offset_y,            size.x, size.y, reference_coordinates) )
@@ -63,28 +71,26 @@ for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=step_x, row++) {
     // console.log('bottom_right: ', pxToGeo( offset_x + tile_wid, offset_y + tile_hei, size.x, size.y, reference_coordinates) )
     // console.log('bottom_left: ',  pxToGeo( offset_x,            offset_y + tile_hei, size.x, size.y, reference_coordinates) )
     // console.log('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
-//
-    var subject_entry = [ outfilename, upper_left.lon, upper_left.lat, upper_right.lon, upper_right.lat, bottom_right.lon, bottom_right.lat, bottom_left.lon, bottom_left.lat, center.lon, center.lat ]
-    csv_content.push( subject_entry )
+
+    // var subject_entry = [ outfilename, upper_left.lon, upper_left.lat, upper_right.lon, upper_right.lat, bottom_right.lon, bottom_right.lat, bottom_left.lon, bottom_left.lat, center.lon, center.lat ]
+    // csv_content.push( subject_entry )
 
   }
 }
 
 // /* Run through task list */
-async.series(task_list, function (err, result) {
+async.series(task_list, function (error, result) {
     // result now equals 'done'
-    if (err) {
-      console.error(err);
+    if (error) {
+      console.error(error);
     }
-    csvStringify(csv_content, function(err, output){
-      console.log('Tiles created; writing manifest...');
-      fs.writeFileSync('manifest.csv', output);
-      console.log('done.')
+    csvStringify(csv_content, function(error, output){
+      console.log('Tiles created.');
+      // console.log('Tiles created; writing manifest...');
+      // fs.writeFileSync('manifest.csv', output);
+      // console.log('done.')
     });
 });
-
-
-
 
 // for debugging: edge of runway at Kathmandu airport
 // console.log( pxToGeo( 2582,3406, size.x, size.y, reference_coordinates ) );
@@ -96,4 +102,34 @@ function pxToGeo( x, y, wid, hei, reference_coordinates ){
   offset_lon = x * delta_lon / wid;
   offset_lat = y * delta_lat / hei;
   return {lon: reference_coordinates.upper_left.lon + offset_lon, lat: reference_coordinates.upper_right.lat - offset_lat}
+}
+
+
+/* Methods to read/write JSON metadata using exiv2 */
+
+function writeImgMeta( filename, data ){
+  var metadata = { "Exif.Photo.UserComment": JSON.stringify(data) }
+
+  exiv2.setImageTags(filename, data, function(error){
+    if (error) {
+      console.error(error);
+    } else {
+      console.log("setImageTags complete..");
+    }
+  });
+}
+
+function readImgMeta( filename ){
+  exiv2.getImageTags(filename, function(error, tags) {
+    if (error) {
+      console.error(error);
+    } else{
+      try{
+        return JSON.parse(tags["Exif.Photo.UserComment"])
+      }
+      catch(error){
+        console.error('Invalid JSON: '+error);
+      }
+    }
+  });
 }

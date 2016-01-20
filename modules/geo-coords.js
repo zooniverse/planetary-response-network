@@ -54,8 +54,10 @@ exports.getMetadata = function (filename) {
 		coordinates[corner_name] = {lat: dd.lat, lon: dd.lon }
 	});
 
-	process.stdout.write("SIZE: \n" + jsonFormat(size) );
-	process.stdout.write("COORDINATES: \n" + jsonFormat(coordinates) );
+	// // debugging code
+	// process.stdout.write("SIZE: \n" + jsonFormat(size) );
+	// process.stdout.write("COORDINATES: \n" + jsonFormat(coordinates) );
+	
 	return { size: size, reference_coordinates: coordinates }
 }
 

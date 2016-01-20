@@ -12,7 +12,7 @@ function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, callba
   ], function (error, result){
       if (error) console.error(error);
       console.log('\nCompleted fetching before/after mosaics!');
-      callback(result)
+      if(callback) callback(result)
   })
 }
 
@@ -38,7 +38,11 @@ function fetchMosaicFromAOI (bounds, url, label, callback){
   }, function (error, response, body) {
       if (!error) {
           var data = JSON.parse(body)
-          processFeatures(data.features, label, function(result){ callback(null, result); } ) // download images and data
+          processFeatures(data.features, label,
+            function(result){
+              if(callback) callback(null, result)
+            }
+          ) // download images and data
       }
   })
 }
@@ -61,11 +65,11 @@ function processFeatures(features, label, callback){
     });
 
   }
-  
+
   /* Download files from list */
   async.parallel(task_list, function (err, result) {
     if (err) console.error(err);
-    callback(result)
+    if (callback) callback(result)
   });
 
 }
@@ -83,7 +87,7 @@ function downloadFile(url, dest, callback){
         out.pipe(localStream);
         localStream.on('close', function () {
           console.log('  File ' + dest + ' transfer complete.')
-          callback(null, dest) // return path to downloaded file
+          if (callback) callback(null, dest) // return path to downloaded file
         });
       }
   })

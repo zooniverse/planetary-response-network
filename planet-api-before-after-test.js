@@ -21,7 +21,21 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 // planetAPI.fetchMosaicFromAOI( bounds, before_url, 'foo')
 
 
-planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds)
+planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
+  function(moments){
+
+    for(var i=0; i<moments.length; i++){
+      regions = moments[i];
+      console.log('MOMENT: ', moments[i] );
+
+      for(var j=0; j<regions.length; j++){
+        console.log('REGION: ', regions[j] );
+      }
+
+    }
+    
+  }
+)
 
 // /* Process each GeoTIF file that was dowloaded */
 //

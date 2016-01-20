@@ -5,13 +5,14 @@ var jsonFormat = require('json-format')
 var async      = require('async')
 
 /* Sequentially download "before" and "after" mosaics */
-function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds){
+function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, callback){
   async.series([
     async.apply( fetchMosaicFromAOI, bounds, before_url, 'before'),
     async.apply( fetchMosaicFromAOI, bounds, after_url,  'after')
   ], function (error, result){
       if (error) console.error(error);
-      console.log('Completed fetching before/after mosaics!');
+      console.log('\nCompleted fetching before/after mosaics!');
+      callback(result)
   })
 }
 
@@ -52,14 +53,7 @@ function processFeatures(features, label, callback){
     var meta_dest = 'data/' + basename + '_' + label + '.json'
 
     // prepare array of function calls
-    task_list.push(
-      function(cb){
-        downloadFile(url, dest, function() {
-          cb(null, dest)
-        })
-      } // note: equivalent to async.apply( downloadFile, url, dest ) // equivalent
-
-    )
+    task_list.push( async.apply( downloadFile, url, dest ) )
 
     /* Write Metadata to JSON */
     fs.writeFile(meta_dest, jsonFormat(features[i]), function(err){
@@ -67,7 +61,7 @@ function processFeatures(features, label, callback){
     });
 
   }
-
+  
   /* Download files from list */
   async.parallel(task_list, function (err, result) {
     if (err) console.error(err);

@@ -4,9 +4,16 @@ var fs         = require('fs')
 var jsonFormat = require('json-format')
 var async      = require('async')
 
-exports.fetchMosaicFromAOI = function ( bounds, url, key ){
+function fetchBeforeAndAfterMosaicFromAOI ( before_url, after_url, bounds, key){
+  console.log('Fetching before/after mosaics intersecting with AOI...')
+  fetchMosaicFromAOI(bounds, before_url, 'before', key)
+  fetchMosaicFromAOI(bounds, after_url, 'after', key)
+}
 
-  console.log('Fetching mosaics intersecting with AOI...');
+/* Downloads a GeoTIF mosaic quad */
+function fetchMosaicFromAOI ( bounds, url, label, key ){
+
+  console.log('Fetching ' + label + ' mosaics intersecting with AOI...');
 
   var intersects = JSON.stringify({
       "type": "Polygon",
@@ -27,23 +34,37 @@ exports.fetchMosaicFromAOI = function ( bounds, url, key ){
   }, function (error, response, body) {
       if (!error) {
           var data = JSON.parse(body)
-          processFeatures(data.features) // download images and data
+
+          //
+
+          // /* List quad ids */
+          // for(var i in data.features){
+          //   console.log(data.features[i].id);
+          // }
+
+          processFeatures(data.features, label, function(result){ console.log('DOWNLOAD LIST: ', result ); } ) // download images and data
       }
   })
 }
 
 /* Figure out what to download from JSON response */
-function processFeatures(features){
-  var download_list = [] // array of function calls
+function processFeatures(features, label, callback){
+  var task_list = [] // array of function calls
   for(var i in features){
     var url = features[i].properties.links.full // note: different from scenes script
-    var basename = url.split('/')[7]
-    var dest = 'data/' + basename + '.tif'
-    var meta_dest = 'data/' + basename + '.json'
+    var basename  = url.split('/')[7]
+    var dest      = 'data/' + basename + '_' + label + '.tif'
+    var meta_dest = 'data/' + basename + '_' + label + '.json'
 
-    download_list.push( async.apply(downloadFile, url, dest ) ) // add to array of function calls
-    // for debugging
-    // download_list = [ async.apply(downloadFile, 'https://api.planet.com/v0/scenes/ortho/20151031_100858_0b09/full?product=visual', dest ) ]
+    // prepare array of function calls
+    task_list.push(
+      function(cb){
+        downloadFile(url, dest, function() {
+          cb(null, dest)
+        })
+      } // note: equivalent to async.apply( downloadFile, url, dest ) // equivalent
+
+    )
 
     /* Write Metadata to JSON */
     fs.writeFile(meta_dest, jsonFormat(features[i]), function(err){
@@ -53,12 +74,10 @@ function processFeatures(features){
   }
 
   /* Download files from list */
-  async.parallel(download_list, function (err, result) {
-      // result now equals 'done'
-      if (err) {
-        console.error(err);
-      }
-      console.log('All downloads completed successfully.');
+  async.parallel(task_list, function (err, result) {
+    if (err) console.error(err);
+    console.log('All downloads completed successfully: ', result);
+    callback(result)
   });
 
 }
@@ -77,8 +96,13 @@ function downloadFile(url, dest, callback){
         out.pipe(localStream);
         localStream.on('close', function () {
           console.log('  File ' + dest + ' transfer complete.')
-          callback(null)
+          callback(null,dest) // return path to downloaded file
         });
       }
   })
 }
+
+/* Handle module exports */
+exports.downloadFile                     = downloadFile
+exports.fetchMosaicFromAOI               = fetchMosaicFromAOI
+exports.fetchBeforeAndAfterMosaicFromAOI = fetchBeforeAndAfterMosaicFromAOI

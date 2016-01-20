@@ -24,8 +24,10 @@ var step_y = tile_hei - overlap;
 
 var filename = argv._[0]
 var basename = path.basename(filename).split('.')[0] // strip everything from filename (including extension)
+var dirname  = path.dirname(filename)
 
-var content  = JSON.parse( fs.readFileSync( 'data/' + basename + '.json' ) )
+var content = JSON.parse( fs.readFileSync( dirname + '/' + basename + '.json' ) )
+console.log('CONTENT = ', content);
 var size = content.metadata.size
 var reference_coordinates = content.metadata.reference_coordinates
 
@@ -39,7 +41,7 @@ for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=step_x, row++) {
   for( var offset_y=0, col=0; offset_y<=size.y; offset_y+=step_y, col++) {
 
     // crop current tile
-    var outfilename = 'data/' + basename + '_' + row + '_' + col + '.png'
+    var outfilename = dirname + '/' + basename + '_' + row + '_' + col + '.png'
     var crop_option = tile_wid + 'x' + tile_hei + '+' + offset_x + '+' + offset_y
     var extent_option = tile_wid + 'x' + tile_hei
 
@@ -77,7 +79,7 @@ async.series(task_list, function (err, result) {
     }
     csvStringify(csv_content, function(err, output){
       console.log('Tiles created; writing manifest...');
-      fs.writeFileSync('data/manifest.csv', output);
+      fs.writeFileSync('manifest.csv', output);
       console.log('done.')
     });
 });

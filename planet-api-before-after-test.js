@@ -45,14 +45,11 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
     var task_list = []
     for(var i=0; i<moments.length; i++){
       regions = moments[i];
-      // console.log('MOMENT: ', moments[i] );
       for(var j=0; j<regions.length; j++){
         image_file = regions[j]
-        // console.log('REGION: ', regions[j] );
         task_list.push( async.apply( tilizeImage, image_file, 480, 160 ) )
       }
     }
-
     console.log('Tilizing images...');
     async.series( task_list, function(error, result) {
       console.log('Tilizing complete.');
@@ -70,7 +67,6 @@ function generateManifest(){
 
   /* Get "before" tiles */
   glob("data/*after*.png", function (er, files) {
-    console.log('BEFORE FILES: ', files);
     async.mapSeries(files, fileMetaToCsv, function (err, csv_rows) {
       csv_rows.splice(0, 0, csv_header);
       csvStringify(csv_rows, function(error, output){

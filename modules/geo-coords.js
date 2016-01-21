@@ -1,5 +1,5 @@
 /* adapted from
- * 2
+ * https://github.com/naturalatlas/node-gdal/blob/master/examples/gdalinfo.js
  */
 var gdal       = require('gdal')
 var util       = require('util')
@@ -57,7 +57,7 @@ exports.getMetadata = function (filename) {
 	// // debugging code
 	// process.stdout.write("SIZE: \n" + jsonFormat(size) );
 	// process.stdout.write("COORDINATES: \n" + jsonFormat(coordinates) );
-	
+
 	return { size: size, reference_coordinates: coordinates }
 }
 

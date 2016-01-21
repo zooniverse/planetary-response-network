@@ -83,13 +83,16 @@ function processFeatures(features, label, callback){
 
 /* Downloads a file at url to dest */
 function downloadFile(url, dest, callback){
-  var localStream = fs.createWriteStream(dest)
-  var out = request({
+  if (process.env.USE_MOSAIC_CACHE && fs.existsSync(dest)) {
+    callback(null, dest)
+  } else {
+    var localStream = fs.createWriteStream(dest)
+    var out = request({
       url: url,
       method: "GET",
       headers: { "Authorization": "Basic " + new Buffer(process.env.PLANET_API_KEY + ":").toString("base64") }
-  });
-  out.on('response', function (resp) {
+    });
+    out.on('response', function (resp) {
       if (resp.statusCode === 200){
         out.pipe(localStream);
         localStream.on('close', function () {
@@ -97,5 +100,6 @@ function downloadFile(url, dest, callback){
           if (callback) callback(null, dest) // return path to downloaded file
         });
       }
-  })
+    })
+  }
 }

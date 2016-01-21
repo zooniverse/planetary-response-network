@@ -5,7 +5,8 @@
   "scripts": {
     "planet-api-test": "node planet-api-test.js",
     "geo-coords-test": "node geo-coords-test.js data/L15-1509E-1188N.tif",
-    "tilize-test": "node tilize-images.js data/L15-1509E-1188N.tif"
+    "tilize-test": "node tilize-images.js data/L15-1509E-1188N.tif",
+    "planet-api-before-after-test": "USE_MOSAIC_CACHE=1 node planet-api-before-after.js"
   },
   "dependencies": {
     "async": "~1.5.2",

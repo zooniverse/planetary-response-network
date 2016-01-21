@@ -32,6 +32,9 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 /* Call Planet API and download GeoTIF and accompanying JSON files */
 // planetAPI.fetchMosaicFromAOI( bounds, before_url, 'foo')
 
+// planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds )
+
+/* Same as above, but generate a manifest afterwards (still needs work) */
 planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
 // var moments = [ [ 'data/L15-1509E-1187N_before.tif' ],
 //             [ 'data/L15-1509E-1187N_after.tif'] ]
@@ -43,7 +46,7 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
       for(var j=0; j<regions.length; j++){
         image_file = regions[j]
         // console.log('REGION: ', regions[j] );
-        task_list.push( async.apply( tilizeImage, image_file, null, null ) )
+        task_list.push( async.apply( tilizeImage, image_file, 480, 160 ) )
       }
     }
 
@@ -56,7 +59,7 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
   }
 )
 
-generateManifest()
+// generateManifest()
 
 function generateManifest(){
 
@@ -92,8 +95,6 @@ function generateManifest(){
 }
 
 function tilizeImage(filename, tileSize, overlap, callback){
-  tileSize = 2048
-  overlap = 0
   var tile_wid = tileSize;
   var tile_hei = tileSize;
   var step_x = tile_wid - overlap;

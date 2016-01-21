@@ -74,7 +74,7 @@ function generateManifest(){
     async.mapSeries(files, fileMetaToCsv, function (err, csv_rows) {
       csv_rows.splice(0, 0, csv_header);
       csvStringify(csv_rows, function(error, output){
-        fs.writeFileSync('manifest.csv', output);
+        fs.writeFileSync('data/manifest.csv', output);
         console.log('Finished writing manifest.')
       });
     })

@@ -1,3 +1,5 @@
+var imgMeta = require('./image-meta')
+
 /**
  * Splits an image into tiles
  * @param  {String}   filename input image
@@ -44,7 +46,7 @@ module.exports = function (filename, tileSize, overlap, callback){
       /* Build up list of tasks */
       task_list.push(
         async.apply( im.convert, [ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ] ),
-        async.apply( writeImgMeta, outfilename, coords )  // write coordinates to tile image metadata
+        async.apply( imgMeta.write, outfilename, coords )  // write coordinates to tile image metadata
       )
     }
   }

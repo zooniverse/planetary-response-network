@@ -36,7 +36,10 @@ Run `npm run-script geo-coords-test` on the CLI. This will extract the coordinat
 }
 ```
 
-### Generating Tiles (currently broken)
+### Generating Tiles
 Run `npm run-script tilize-images` on the CLI. This will split one of the downloaded mosaic GeoTIFs (`data/L15-1509E-1188N.tif`) into tiles 480px square, with 160px overlap between tiles and write a subject set file (`data/manifest.csv`) ready to upload to Panoptes. For customisation options, run `node tilize-images`.
 
 TO DO: Interpolate geo coords of individual tiles and generate metadata. Creating subjects and loading into Panoptes follows.
+
+### Tying it all together
+Run `npm run-script planet-api-before-after-test` on the CLI to fetch before/after-quake Nepal mosaics, tile them, interpolate coords of individual tiles and write a subject manifest. TODO upload subjects. By default this won't re-fetch already downloaded mosaics; to override this behaviour run with `USE_MOSAIC_CACHE=0`

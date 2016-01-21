@@ -32,12 +32,10 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 /* Call Planet API and download GeoTIF and accompanying JSON files */
 // planetAPI.fetchMosaicFromAOI( bounds, before_url, 'foo')
 
-
 planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
 // var moments = [ [ 'data/L15-1509E-1187N_before.tif' ],
 //             [ 'data/L15-1509E-1187N_after.tif'] ]
   function (moments){
-
     var task_list = []
     for(var i=0; i<moments.length; i++){
       regions = moments[i];
@@ -51,11 +49,47 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
 
     console.log('Tilizing images...');
     async.series( task_list, function(error, result) {
-      console.log('Finished tilizing images.');
+      console.log('Tilizing complete.');
+      generateManifest()
       // callback(null, result)
     })
   }
 )
+
+generateManifest()
+
+function generateManifest(){
+
+  // create csv header
+  var csv_content = []
+  csv_content.push( [ 'image1', 'image2', 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ] )
+
+  var task_list = []
+
+  /* Get "before" tiles */
+  glob("data/*after*.png", function (er, files) {
+    console.log('BEFORE FILES: ', files);
+    for(var i=0; i<files.length; i++){
+      var filename = files[i]
+
+      readImgMeta(filename,
+        function(filename, metadata){
+          coords = JSON.parse( metadata["Exif.Photo.UserComment"] )
+          csv_content.push([ filename, filename.replace('after','before'), coords.upper_left.lon, coords.upper_left.lat, coords.upper_right.lon, coords.upper_right.lat, coords.bottom_right.lon, coords.bottom_right.lat, coords.bottom_left.lon, coords.bottom_left.lat, coords.center.lon, coords.center.lat ])
+          console.log('CSV_CONTENT = ', csv_content);
+
+          /* TO DO: This should go outside the loop */
+          csvStringify(csv_content, function(error, output){
+            fs.writeFileSync('manifest.csv', output);
+            console.log('Finished writing manifest.')
+          });
+
+        }
+      )
+    }
+    // console.log('CSV CONTENT = ', csv_content); //TO DO: this doesn't get executed, use callback instead
+  })
+}
 
 function tilizeImage(filename, tileSize, overlap, callback){
   tileSize = 2048
@@ -75,10 +109,6 @@ function tilizeImage(filename, tileSize, overlap, callback){
   var content = JSON.parse( fs.readFileSync( dirname + '/' + basename + '.json' ) )
   var size = content.metadata.size
   var reference_coordinates = content.metadata.reference_coordinates
-
-  // create csv header
-  var csv_content = []
-  csv_content.push( [ 'image_file', 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ] )
 
   var task_list = []
 
@@ -110,17 +140,11 @@ function tilizeImage(filename, tileSize, overlap, callback){
   /* Run through task list */
   async.series(task_list, function (error, result) {
       // result now equals 'done'
-      console.log('Tiles created.');
+      console.log('Finished tilizing batch.');
       callback(null, result)
       if (error) {
         console.error(error);
       }
-      // else{
-      //   csvStringify(csv_content, function(error, output){
-      //     console.log('Tiles created.');
-      //   });
-      //   // callback(null, result)
-      // }
   });
 
 } // end tilizeImage()
@@ -149,20 +173,21 @@ function writeImgMeta( filename, data, callback ){
       console.error(error);
     } else {
       console.log('  ' + filename + ': Saved reference coordinates to tile metadata.');
-      readImgMeta(filename)
-      callback(null, data)
+      // readImgMeta(filename) // debug
+      callback(null, filename)
     }
   });
 }
 
-function readImgMeta( filename ){
+function readImgMeta( filename, callback ){
   exiv2.getImageTags(filename, function(error, tags) {
     if (error) {
       console.error(error);
     } else{
       try{
-        console.log('TAGS: ', tags["Exif.Photo.UserComment"]);
-        return JSON.parse(tags["Exif.Photo.UserComment"])
+        // console.log('TAGS: ', tags["Exif.Photo.UserComment"]);
+        callback(filename, tags)
+        // return tags["Exif.Photo.UserComment"]
       }
       catch(error){
         console.error('Invalid JSON: '+error);

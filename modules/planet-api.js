@@ -4,6 +4,11 @@ var fs         = require('fs')
 var jsonFormat = require('json-format')
 var async      = require('async')
 
+/* Handle module exports */
+exports.downloadFile                     = downloadFile
+exports.fetchMosaicFromAOI               = fetchMosaicFromAOI
+exports.fetchBeforeAndAfterMosaicFromAOI = fetchBeforeAndAfterMosaicFromAOI
+
 /* Sequentially download "before" and "after" mosaics */
 function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, callback){
   async.series([
@@ -35,7 +40,7 @@ function fetchMosaicFromAOI (bounds, url, label, callback){
     headers: {
         "Authorization": "Basic " + new Buffer(process.env.PLANET_API_KEY + ":").toString("base64")
     },
-  }, 
+  },
   function (error, response, body) {
     if (!error) {
         var data = JSON.parse(body)
@@ -94,8 +99,3 @@ function downloadFile(url, dest, callback){
       }
   })
 }
-
-/* Handle module exports */
-exports.downloadFile                     = downloadFile
-exports.fetchMosaicFromAOI               = fetchMosaicFromAOI
-exports.fetchBeforeAndAfterMosaicFromAOI = fetchBeforeAndAfterMosaicFromAOI

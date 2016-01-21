@@ -1,4 +1,10 @@
-var imgMeta = require('./image-meta')
+var fs             = require('fs')
+var im             = require('imagemagick')
+var path           = require('path')
+var async          = require('async')
+var imgMeta        = require('./image-meta')
+var pxToGeo        = require('./px-to-geo')
+var geoCoords      = require('./geo-coords')
 
 /**
  * Splits an image into tiles

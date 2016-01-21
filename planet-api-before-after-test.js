@@ -103,13 +103,7 @@ function writeImgMeta( filename, data, callback ){
 }
 
 function readImgMeta( filename, callback ){
-  exiv2.getImageTags(filename, function(error, tags) {
-    if (error) {
-      callback(error)
-    } else{
-      callback(null, tags)
-    }
-  });
+  exiv2.getImageTags(filename, callback);
 }
 
 

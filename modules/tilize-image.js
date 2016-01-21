@@ -53,10 +53,7 @@ module.exports = function (filename, tileSize, overlap, callback){
   async.series(task_list, function (error, result) {
       // result now equals 'done'
       console.log('Finished tilizing batch.');
-      callback(null, result)
-      if (error) {
-        console.error(error);
-      }
+      callback(error, result)
   });
 
 }

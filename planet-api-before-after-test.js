@@ -63,35 +63,19 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
 // generateManifest()
 
 function generateManifest(){
-
   // create csv header
-  var csv_content = []
-  csv_content.push( [ 'image1', 'image2', 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ] )
-
-  var task_list = []
+  var csv_header = [ 'image1', 'image2', 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ]
 
   /* Get "before" tiles */
   glob("data/*after*.png", function (er, files) {
     console.log('BEFORE FILES: ', files);
-    for(var i=0; i<files.length; i++){
-      var filename = files[i]
-
-      readImgMeta(filename,
-        function(filename, metadata){
-          coords = JSON.parse( metadata["Exif.Photo.UserComment"] )
-          csv_content.push([ filename, filename.replace('after','before'), coords.upper_left.lon, coords.upper_left.lat, coords.upper_right.lon, coords.upper_right.lat, coords.bottom_right.lon, coords.bottom_right.lat, coords.bottom_left.lon, coords.bottom_left.lat, coords.center.lon, coords.center.lat ])
-          console.log('CSV_CONTENT = ', csv_content);
-
-          /* TO DO: This should go outside the loop */
-          csvStringify(csv_content, function(error, output){
-            fs.writeFileSync('manifest.csv', output);
-            console.log('Finished writing manifest.')
-          });
-
-        }
-      )
-    }
-    // console.log('CSV CONTENT = ', csv_content); //TO DO: this doesn't get executed, use callback instead
+    async.mapSeries(files, fileMetaToCsv, function (err, csv_rows) {
+      csv_rows.splice(0, 0, csv_header);
+      csvStringify(csv_rows, function(error, output){
+        fs.writeFileSync('manifest.csv', output);
+        console.log('Finished writing manifest.')
+      });
+    })
   })
 }
 
@@ -177,16 +161,23 @@ function writeImgMeta( filename, data, callback ){
 function readImgMeta( filename, callback ){
   exiv2.getImageTags(filename, function(error, tags) {
     if (error) {
-      console.error(error);
+      callback(error)
     } else{
-      try{
-        // console.log('TAGS: ', tags["Exif.Photo.UserComment"]);
-        callback(filename, tags)
-        // return tags["Exif.Photo.UserComment"]
-      }
-      catch(error){
-        console.error('Invalid JSON: '+error);
-      }
+      callback(null, tags)
     }
   });
+}
+
+
+var fileMetaToCsv = function (filename, callback) {
+  readImgMeta(filename, function (err, metadata) {
+    if (err) return callback(err)
+
+    try {
+      coords = JSON.parse( metadata["Exif.Photo.UserComment"] )
+      callback(null, [ filename, filename.replace('after','before'), coords.upper_left.lon, coords.upper_left.lat, coords.upper_right.lon, coords.upper_right.lat, coords.bottom_right.lon, coords.bottom_right.lat, coords.bottom_left.lon, coords.bottom_left.lat, coords.center.lon, coords.center.lat ])
+    } catch (e) {
+      callback(e)
+    }
+  })
 }

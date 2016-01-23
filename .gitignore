@@ -4,3 +4,4 @@ data/*.png
 data/*.json
 data/manifest.csv
 data/nepal*mosaic
+.DS_Store

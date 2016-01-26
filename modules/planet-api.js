@@ -15,9 +15,12 @@ function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, callba
     async.apply( fetchMosaicFromAOI, bounds, before_url, 'before'),
     async.apply( fetchMosaicFromAOI, bounds, after_url,  'after')
   ], function (error, result){
-      if (error) console.error(error);
-      console.log('Completed fetching before/after mosaics.');
-      if(callback) callback(result)
+      if (error){
+        callback(error)
+      } else{
+        console.log('Completed fetching before/after mosaics.')
+        callback(null,result)
+      }
   })
 }
 
@@ -27,8 +30,8 @@ function fetchMosaicFromAOI (bounds, url, label, callback){
   console.log('Fetching \"' + label + '\" mosaics intersecting with AOI...');
 
   var intersects = JSON.stringify({
-      "type": "Polygon",
-        "coordinates": [bounds]
+    "type": "Polygon",
+      "coordinates": [bounds]
   })
 
   var params = { intersects: intersects }
@@ -42,7 +45,9 @@ function fetchMosaicFromAOI (bounds, url, label, callback){
     },
   },
   function (error, response, body) {
-    if (!error) {
+    if(error) {
+      callback(error)
+    } else{
         var data = JSON.parse(body)
         console.log('Found ' + data.features.length + ' mosaics.');
         processFeatures(data.features, label,

@@ -24,8 +24,10 @@ module.exports = function (src, dest, bucket, callback){
     if (error){
       callback(error)
     } else {
-      // console.log('File ' + dest + ' upload complete.');
-      callback(null, dest)
+      // return url to uploaded image
+      image_url = s3.getSignedUrl('getObject', {Bucket: bucket, Key: dest}).split('?')[0]
+      console.log('  Uploaded file ', image_url);
+      callback(null, image_url)
     }
   });
 }

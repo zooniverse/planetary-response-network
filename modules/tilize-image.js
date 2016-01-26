@@ -14,6 +14,10 @@ var geoCoords      = require('./geo-coords')
  * @param  {Function} callback
  */
 module.exports = function (filename, tileSize, overlap, callback){
+  // DEBUG CODE!!!
+  tileSize = 4097
+  overlap = 0
+
   var tile_wid = tileSize;
   var tile_hei = tileSize;
   var step_x = tile_wid - overlap;
@@ -55,7 +59,7 @@ module.exports = function (filename, tileSize, overlap, callback){
         async.apply( imgMeta.write, outfilename, coords )  // write coordinates to tile image metadata
       )
     }
-  }
+  } // end outer for loop
 
   /* Run through task list */
   async.series(task_list, function (error, result) {

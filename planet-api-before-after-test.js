@@ -19,9 +19,6 @@ var csvStringify = require('csv-stringify')
 var path         = require('path')
 var exiv2        = require('exiv2')
 
-var AWS          = require('aws-sdk');
-
-
 // var url = "https://api.planet.com/v0/scenes/ortho/"
 // var url = "https://api.planet.com/v0/mosaics/nepal_landsat_prequake_mosaic/quads/"
 // var url = "https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/"
@@ -64,7 +61,20 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 // )
 
 // generateManifest()
-uploadSubjects()
+// uploadSubjects()
+
+var bucket   = 'planetary-response-network'
+var filename = 'data/L15-1509E-1187N_before_9_10.png'
+
+var uploadToS3 = require('./modules/upload-to-s3.js')
+uploadToS3(filename, filename, bucket, function(error, result){
+  if(error){
+    console.log(error);
+  } else{
+    console.log('File ' + result + ' uploaded to S3.');
+  }
+
+});
 
 function generateManifest(){
   // create csv header
@@ -82,88 +92,29 @@ function generateManifest(){
   })
 }
 
-function uploadSubject(){
-  console.log('Uploading subjects...');
-
-
-  AWS.config.update({ // This assumes you have AWS credentials exported in ENV
-    accessKeyId: process.env.AMAZON_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AMAZON_SECRET_ACCESS_KEY
-  })
-
-  var s3 = new AWS.S3();
-  var bucket   = 'planetary-response-network'
-  var filename = 'data/L15-1509E-1187N_before_9_10.png'
-  var file_buffer = fs.readFileSync(filename);
-
-  s3.putObject({
-    ACL: 'public-read',
-    Bucket: bucket,
-    Key: filename,           // remote filename
-    Body: file_buffer,
-    ContentType: 'image/png' // Note: Otherwise file not served as image
-  }, function(error, response) {
-    console.log('Uploaded file: ', filename );
-  });
-
-
-
-
-
-  //
-  // var s3 = new AWS.S3();
-  // var params = {
-  //     Bucket: bucket,
-  //     Key: filename,
-  //     ACL: 'public-read',
-  //     Body: "Hello"
-  // };
-  //
-  // var s3 = new AWS.S3();
-  // s3.putObject(params, function (error, result) {
-  //     if (error) {
-  //         console.log("Error uploading data: ", error);
-  //     } else {
-  //         console.log("Successfully uploaded data!");
-  //         var url = s3.getSignedUrl('getObject', {Bucket: bucket, Key: filename});
-  //         console.log('The URL is', url);
-  //     }
-  // });
-
-
-  // var s3 = new AWS.S3({params: {Bucket: 's3://'} });
-  // s3.listBuckets(function(err, data) {
-  //   if (err) { console.log("Error:", err); }
-  //   else {
-  //     for (var index in data.Buckets) {
-  //       var bucket = data.Buckets[index];
-  //       console.log("Bucket: ", bucket.Name, ' : ', bucket.CreationDate);
-  //     }
-  //   }
-  // });
-
-
-  //
-  // /* Get "before" tiles */
-  // exec('ls data/*.png',
-  //   (error, stdout, stderr) => {
-  //     console.log(`stdout: ${stdout}`);
-  //     // console.log(`stderr: ${stderr}`);
-  //     if (error !== null) {
-  //       console.log(`exec error: ${error}`);
-  //       // callback(error)
-  //     }
-  // });
-}
-
-function uploadFileToS3(filename, callback){
-  try{
-    console.log('Uploading file ' + filename + ' to S3...');
-    callback(null)
-  } catch (error){
-    callback(error)
-  }
-}
+// function uploadFileToS3(src, dest, bucket){
+//   console.log('Uploading subjects...');
+//
+//   AWS.config.update({ // This assumes you have AWS credentials exported in ENV
+//     accessKeyId: process.env.AMAZON_ACCESS_KEY_ID,
+//     secretAccessKey: process.env.AMAZON_SECRET_ACCESS_KEY
+//   })
+//
+//   var s3 = new AWS.S3();
+//   var bucket   = bucket //'planetary-response-network'
+//   var filename = src    //'data/L15-1509E-1187N_before_9_10.png'
+//   var file_buffer = fs.readFileSync(filename);
+//
+//   s3.putObject({
+//     ACL: 'public-read',
+//     Bucket: bucket,
+//     Key: dest,
+//     Body: file_buffer,
+//     ContentType: 'image/png' // Note: Otherwise file not served as image
+//   }, function(error, response) {
+//     console.log('Uploaded file: ', filename );
+//   });
+// }
 
 // for debugging: edge of runway at Kathmandu airport
 // console.log( pxToGeo( 2582,3406, size.x, size.y, reference_coordinates ) );

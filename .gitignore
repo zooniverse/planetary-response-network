@@ -5,3 +5,4 @@ data/*.json
 data/manifest.csv
 data/nepal*mosaic
 .DS_Store
+uploader/uploaded_aois

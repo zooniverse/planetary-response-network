@@ -1,0 +1,18 @@
+extends layout
+
+block content
+  form.uploader(method="POST" enctype="multipart/form-data" action="/aois")
+    label(for="file") Drop a file here, or click to browse
+    input(id="file" type="file" name="file")
+    button(type="submit") Upload
+  
+block scripts
+  script(src="/js/uploader.js")
+  script.
+    new Uploader(document.querySelector('.uploader'), {
+      target: '/aois',
+      acceptedTypes: ['application/vnd.google-earth.kml+xml']
+    })
+
+block styles
+  link(rel="stylesheet" type="text/css" href="/css/uploader.css")

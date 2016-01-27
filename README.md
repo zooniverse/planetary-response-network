@@ -48,3 +48,5 @@ TO DO: Interpolate geo coords of individual tiles and generate metadata. Creatin
 
 ### Tying it all together
 Run `npm run-script planet-api-before-after-test` on the CLI to fetch before/after-quake Nepal mosaics, tile them, interpolate coords of individual tiles and write a subject manifest. Images in the manifest will be uploaded to the S3 bucket and Zooniverse subjects will be generated and deployed. By default this won't re-fetch already downloaded mosaics; to override this behaviour run with `USE_MOSAIC_CACHE=0`
+
+Alternatively, run the KML uploader app: `npm run-script uploader` and upload a KML file at http://localhost:3736.

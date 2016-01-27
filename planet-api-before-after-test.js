@@ -1,52 +1,43 @@
-var jsdom       = require('jsdom').jsdom
-var tj          = require('togeojson')
-var fs          = require('fs')
-var glob        = require('glob')
-var path        = require('path')
-var exec        = require('child_process').exec
-var async       = require('async')
-var planetAPI   = require('./modules/planet-api.js')
-var geoCoords   = require('./modules/geo-coords.js')
-var pxToGeo     = require('./modules/px-to-geo.js')
-var tilizeImage = require('./modules/tilize-image.js')
-var imgMeta     = require('./modules/image-meta.js')
-
-
-var im           = require('imagemagick')
-var jsonFormat   = require('json-format')
-var util         = require('util')
+var jsdom        = require('jsdom').jsdom
+var tj           = require('togeojson')
+var fs           = require('fs')
+var glob         = require('glob')
+var async        = require('async')
+var planetAPI    = require('./modules/planet-api.js')
+var tilizeImage  = require('./modules/tilize-image.js')
+var imgMeta      = require('./modules/image-meta.js')
 var csvStringify = require('csv-stringify')
-var path         = require('path')
-var exiv2        = require('exiv2')
+var uploadToS3   = require('./modules/upload-to-s3.js')
+var panoptesAPI  = require('./modules/panoptes-api.js')
+var parse        = require('csv-parse')
 
+/* Available mosaics:
+ *   https://api.planet.com/v0/scenes/ortho/
+ *   https://api.planet.com/v0/mosaics/nepal_landsat_prequake_mosaic/quads/
+ *   https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/
+ *   https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/
+ *   https://api.planet.com/v0/mosaics/nepal_interquake_mosaic/quads/
+ */
 
-var uploadToS3  = require('./modules/upload-to-s3.js')
-var panoptesAPI = require('./modules/panoptes-api.js')
-var parse       = require('csv-parse')
-
-// var url = "https://api.planet.com/v0/scenes/ortho/"
-// var url = "https://api.planet.com/v0/mosaics/nepal_landsat_prequake_mosaic/quads/"
-// var url = "https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/"
-// var url = "https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/"
-// var url = "https://api.planet.com/v0/mosaics/nepal_interquake_mosaic/quads/"
-
+ /* Selected mosaic */
 var before_url = 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/'
 var after_url  = 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/'
 
+/* Read area of interest */
 var kml = jsdom(fs.readFileSync('data/central-kathmandu.kml'));
 var geoJSON = tj.kml(kml)
 var bounds = geoJSON.features[0].geometry.coordinates[0]
 
+/* Set parameters */
 var manifest_file = 'data/manifest.csv'
 var project_id     = '2035'
 var subject_set_id = '3614'
+var bucket = 'planetary-response-network'
 
 // /* Call Planet API and download GeoTIF and accompanying JSON files */
 // planetAPI.fetchMosaicFromAOI( bounds, before_url, 'foo')
-//
 // planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds )
 
-/* Same as above, but generate a manifest afterwards (still needs work) */
 planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
   function (error, result){
     if(error){
@@ -65,7 +56,7 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
         console.log('Tilizing complete.');
         generateManifest( manifest_file, function(){
           uploadImages(manifest_file, project_id, subject_set_id, function(){
-            console.log('Finished uploading subjects.');
+            // console.log('Finished uploading subjects.');
           })
         })
       })
@@ -80,7 +71,7 @@ function uploadImages(manifest_file, project_id, subject_set_id, callback){
   rs = fs.readFile(manifest_file, function(err,data){
     parse(data, {columns: true}, function(err,rows){
 
-      async.mapSeries(rows, uploadSubjectImages, function(error, result){
+      async.mapSeries(rows, uploadSubjectImagesToS3, function(error, result){
         async.mapSeries(rows, createSubjectFromManifestRow, function(error, result){
           panoptesAPI.saveSubjects(result, function(error, result){
             if(error){
@@ -96,10 +87,10 @@ function uploadImages(manifest_file, project_id, subject_set_id, callback){
 }
 
 // Note: assumes there are two valid images in each row
-function uploadSubjectImages(row, callback){
+function uploadSubjectImagesToS3(row, callback){
   async.series([
-    async.apply( uploadToS3, row['image1'], row['image1'], 'planetary-response-network' ),
-    async.apply( uploadToS3, row['image2'], row['image2'], 'planetary-response-network' )
+    async.apply( uploadToS3, row['image1'], row['image1'], bucket ),
+    async.apply( uploadToS3, row['image2'], row['image2'], bucket )
   ], function(error, result){
     // console.log('Finished processing row! RESULT = ', result); // DEBUG
     // replace local filename with image url
@@ -143,9 +134,6 @@ function generateManifest(manifest_file, callback){
     })
   })
 }
-
-// for debugging: edge of runway at Kathmandu airport
-// console.log( pxToGeo( 2582,3406, size.x, size.y, reference_coordinates ) );
 
 var fileMetaToCsv = function (filename, callback) {
   imgMeta.read(filename, function (err, metadata) {

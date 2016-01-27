@@ -22,13 +22,12 @@ function saveSubjects(subjects, callback){
         return function() {
           api.type('subjects').create(subject).save()
             .then(function(subject){
-             console.log("CREATED SUBJECT: ," + JSON.stringify(subject) );
+            //  console.log("CREATED SUBJECT: ," + JSON.stringify(subject) ); // DEBUG CODE
              callback(null, subject)
             })
             .catch(function(error) {
              console.log("Error saving subject data! ", error);
              callback(error)
-            //  process.exit(1);
             })
         }
       }(subject), delay);

@@ -1,10 +1,9 @@
 global.XMLHttpRequest = require('xmlhttprequest-cookie').XMLHttpRequest
 var panoptesClient = require('panoptes-client')
 
-
-
 exports.createPanoptesSubject = createPanoptesSubject
 exports.saveSubjects = saveSubjects
+// exports.saveSubject = saveSubject
 exports.createSubject = createSubject
 
 function createPanoptesSubject(subject, project_id, subject_set_id){
@@ -51,30 +50,61 @@ function createPanoptesSubject(subject, project_id, subject_set_id){
 }
 
 /* SAVES SUBJECTS */
-function saveSubjects(subjects){
+function saveSubjects(subjects, callback){
+
+  var auth = panoptesClient.auth
+  var api  = panoptesClient.apiClient
+  var credentials = {
+    login: process.env.ZOONIVERSE_USERNAME,
+    password: process.env.ZOONIVERSE_PASSWORD
+  };
 
   api.update({'params.admin': true});
   auth.signIn(credentials).then(function(){
-
-    var delay = 1000;
+    var delay = 0;
     for(var i=0; i<subjects.length; i++){
       subject = subjects[i];
-      delay += 0;
-      setTimeout(function(subject) {
+      delay += 1000;
+      setTimeout(function(subject) { // Let's not overwhelm the API
         return function() {
           api.type('subjects').create(subject).save()
             .then(function(subject){
              console.log("CREATED SUBJECT: ," + JSON.stringify(subject) );
+             callback(null, subject)
             })
             .catch(function(error) {
              console.log("Error saving subject data! ", error);
-             process.exit(1);
+             callback(error)
+            //  process.exit(1);
             })
         }
       }(subject), delay);
     }
   });
 }
+
+// function saveSubject(subject, callback){
+//
+//   var auth = panoptesClient.auth
+//   var api  = panoptesClient.apiClient
+//   var credentials = {
+//     login: process.env.ZOONIVERSE_USERNAME,
+//     password: process.env.ZOONIVERSE_PASSWORD
+//   };
+//
+//   api.update({'params.admin': true});
+//   auth.signIn(credentials).then(function(){
+//     api.type('subjects').create(subject).save()
+//       .then(function(subject){
+//        console.log("CREATED SUBJECT: ," + JSON.stringify(subject) );
+//        callback(null, subject)
+//       })
+//       .catch(function(error) {
+//        console.log("Error saving subject data! ", error);
+//        callback(error)
+//       })
+//   })
+// }
 
 function createSubject(locations, metadata){
   subject = {

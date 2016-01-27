@@ -15,7 +15,7 @@ var geoCoords      = require('./geo-coords')
  */
 module.exports = function (filename, tileSize, overlap, callback){
   // DEBUG CODE!!!
-  tileSize = 4097
+  tileSize = 4096 + 1
   overlap = 0
 
   var tile_wid = tileSize;

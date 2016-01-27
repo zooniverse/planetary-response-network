@@ -21,7 +21,7 @@ var exiv2        = require('exiv2')
 
 
 var uploadToS3  = require('./modules/upload-to-s3.js')
-var panoptesAPI = require('./modules/create-panoptes-subject.js')
+var panoptesAPI = require('./modules/panoptes-api.js')
 var parse       = require('csv-parse')
 
 // var url = "https://api.planet.com/v0/scenes/ortho/"
@@ -39,77 +39,53 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 
 var manifest_file = 'data/manifest.csv'
 var project_id     = '2035'
-var subject_set_id = '3584'
+var subject_set_id = '3614'
 
-/* Call Planet API and download GeoTIF and accompanying JSON files */
+// /* Call Planet API and download GeoTIF and accompanying JSON files */
 // planetAPI.fetchMosaicFromAOI( bounds, before_url, 'foo')
-
+//
 // planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds )
 
-// /* Same as above, but generate a manifest afterwards (still needs work) */
-// planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
-// // var moments = [ [ 'data/L15-1509E-1187N_before.tif' ],
-// //             [ 'data/L15-1509E-1187N_after.tif'] ]
-//   function (error, result){
-//     if(error){
-//       console.log(error);;
-//     } else{
-//       var task_list = []
-//       for(var i=0; i<result.length; i++){
-//         regions = result[i];
-//         for(var j=0; j<regions.length; j++){
-//           image_file = regions[j]
-//           task_list.push( async.apply( tilizeImage, image_file, 480, 160 ) )
-//         }
-//       }
-//       console.log('Tilizing images...');
-//       async.series( task_list, function(error, result) {
-//         console.log('Tilizing complete.');
-//
-//         generateManifest( manifest_file, function(){
-//           console.log('Finished generating manifest!');
-//           uploadSubjects(manifest_file, project_id, subject_set_id, function(){
-//             console.log('Finished uploading subjects!');
-//           })
-//         })
-//         // uploadImages()
-//         // callback(null, result)
-//       })
-//     }
-//   }
-// )
-
-uploadImages(manifest_file, project_id, subject_set_id, function(){
-  console.log('Finished uploading subjects!');
-  // createSubjects()
-})
+/* Same as above, but generate a manifest afterwards (still needs work) */
+planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
+// var moments = [ [ 'data/L15-1509E-1187N_before.tif' ],
+//             [ 'data/L15-1509E-1187N_after.tif'] ]
+  function (error, result){
+    if(error){
+      console.log(error);;
+    } else{
+      var task_list = []
+      for(var i=0; i<result.length; i++){
+        regions = result[i];
+        for(var j=0; j<regions.length; j++){
+          image_file = regions[j]
+          task_list.push( async.apply( tilizeImage, image_file, 480, 160 ) )
+        }
+      }
+      console.log('Tilizing images...');
+      async.series( task_list, function(error, result) {
+        // tilizing complete
+        console.log('Tilizing complete.');
+        generateManifest( manifest_file, function(){
+          // manifest generated
+          uploadImages(manifest_file, project_id, subject_set_id, function(){
+            // subjects uploaded
+            console.log('Finished uploading subjects.');
+          })
+        })
+        // uploadImages()
+        // callback(null, result)
+      })
+    }
+  }
+)
 
 
-// generateManifest()
-// uploadSubjects()
+// uploadImages(manifest_file, project_id, subject_set_id, function(){
+//   console.log('Finished uploading subjects!');
+//   // createSubjects()
+// })
 
-// var createPanoptesSubject = require('./modules/create-panoptes-subject.js')
-//
-// // project info for planetary response network
-// var project_id     = '2035'
-// var subject_set_id = '3584'
-//
-// var subject = null
-// createPanoptesSubject(subject, project_id, subject_set_id)
-//
-//
-
-// var bucket   = 'planetary-response-network'
-// var filename = 'data/L15-1509E-1187N_before_9_10.png'
-//
-// var uploadToS3 = require('./modules/upload-to-s3.js')
-// uploadToS3(filename, filename, bucket, function(error, result){
-//   if(error){
-//     console.log(error);
-//   } else{
-//     console.log('File ' + result + ' uploaded to S3.');
-//   }
-// });
 
 function uploadImages(manifest_file, project_id, subject_set_id, callback){
   console.log('Uploading images...');
@@ -118,97 +94,58 @@ function uploadImages(manifest_file, project_id, subject_set_id, callback){
   rs = fs.readFile(manifest_file, function(err,data){
     parse(data, {columns: true}, function(err,rows){
 
-      async.mapSeries(rows, processRow, function(error, result){
-        console.log('ROW PROCESSED ', result);
+      async.mapSeries(rows, uploadSubjectImages, function(error, result){
+        // console.log('UPLOADED IMAGES FROM PROCESSED ROWS ', result);
+        async.mapSeries(rows, createSubjectFromManifestRow, function(error, result){
+          panoptesAPI.saveSubjects(result, function(error, result){
+            if(error){
+              callback(error)
+            } else{
+              callback(null, result)
+            }
+          })
+        })
       })
-
-      // for(var i=0; i<data.length; i++){
-      //   var row = data[i]
-      //   // var locations = [
-      //   //   { 'image/png': row['image1'] },
-      //   //   { 'image/png': row['image2'] }
-      //   // ]
-      //   // console.log('LOCATIONS = ', locations);
-      // }
-
     })
+  })
+}
 
-    // console.log('DATA = ', data);
-    // parse(data, {columns: true}, function(err,data){
-    //   console.log('DATA (PARSED): ', data[0]['image1']);
-    //   var filename = data[0]['image1']
-    //   uploadToS3(filename, filename, 'planetary-response-network', function(error, result){
-    //     if(error){
-    //       console.log(error)
-    //     } else{
-    //       console.log(result);
-    //     }
-    //   })
-    // })
-  });
+// Note: assumes there are two valid images in each row
+function uploadSubjectImages(row, callback){
+  async.series([
+    async.apply( uploadToS3, row['image1'], row['image1'], 'planetary-response-network' ),
+    async.apply( uploadToS3, row['image2'], row['image2'], 'planetary-response-network' )
+  ], function(error, result){
+    // console.log('Finished processing row! RESULT = ', result); // DEBUG
+    // replace local filename with image url
+    row['image1'] = result[0]
+    row['image2'] = result[1]
+    callback(null, row)
+  })
+}
 
-  function processRow(row, callback){
-
-    // console.log('fooRows received this --> ', blah);
-    // uploadToS3()
-    async.series([
-      async.apply( uploadToS3, row['image1'], row['image1'], 'planetary-response-network' ),
-      async.apply( uploadToS3, row['image2'], row['image2'], 'planetary-response-network' )
-    ], function(error, result){
-      // console.log('Finished processing row! ');
-      callback(null, row)
-    })
+function createSubjectFromManifestRow(row, callback){
+  // console.log('createSubjectFromManifestRow() received ' + row);
+  var metadata = row
+  var locations = [
+    { 'image/png': row['image1'] },
+    { 'image/png': row['image2'] }
+  ]
+  var subject = {
+    locations: locations,
+    metadata: metadata,
+    links:{
+      project: project_id,
+      subject_sets: [subject_set_id]
+    }
   }
-
-  // parse(rs, {columns: true}, function(err, data){
-  //   console.log(data);
+  // DEBUG
+  // console.log('UPLOAD SUBJECT: ', subject);
+  // panoptesAPI.saveSubject(subject, function(error, result){
+  //   console.log('SUBJEST SAVED: ', result);
   // })
-  // rs.pipe(foo);
 
-  // basicCSV.readCSV( manifest_file, { dropHeader: false }, function(error, rows) {
-  //  if(error){
-  //    callback(error)
-  //  }else{
-  //    console.log('ROWS = ', rows);
-  //    var header = rows[0]
-  //    for(var i=1; i<rows.length; i++){
-  //      var current_row = rows[i]
-  //      console.log('ROSLDKJSHD; ', current_row['image1']);
-  //      var locations = [
-  //        { 'image/png': current_row[0] },
-  //        { 'image/png': current_row[1] },
-  //      ]
-
-      //  uploadToS3(current_row[0])
-
-      //  var metadata = {
-      //     upper_left_lon:   current_row[2],
-      //     upper_left_lat:   current_row[3],
-      //     upper_right_lon:  current_row[4],
-      //     upper_right_lat:  current_row[5],
-      //     bottom_right_lon: current_row[6],
-      //     bottom_right_lat: current_row[7],
-      //     bottom_left_lon:  current_row[8],
-      //     bottom_left_lat:  current_row[9],
-      //     center_lon:       current_row[10],
-      //     center_lat:       current_row[11]
-      //   }
-      //   var subject = {
-      //     locations: locations,
-      //     metadata: metadata,
-      //     links:{
-      //       project: project_id,
-      //       subject_sets: [subject_set_id]
-      //     }
-      //   }
-      //   console.log('SUBJECT = ', subject)
- //     }
- //   }
- // })
-
-  // callback(null, result)
-
-
+  callback(null, subject)
 }
 
 function generateManifest(manifest_file, callback){

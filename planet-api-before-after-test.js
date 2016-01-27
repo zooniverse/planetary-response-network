@@ -31,7 +31,7 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 /* Set parameters */
 var manifest_file = 'data/manifest.csv'
 var project_id     = '2035'
-var subject_set_id = '3616'
+var subject_set_id = '3617'
 var bucket = 'planetary-response-network'
 
 /* Call Planet API and download GeoTIF and accompanying JSON files */

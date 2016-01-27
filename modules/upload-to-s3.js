@@ -2,8 +2,6 @@ var AWS = require('aws-sdk');
 var fs = require('fs')
 
 module.exports = function (src, dest, bucket, callback){
-  // console.log('Uploading file to s3://', bucket);
-
   AWS.config.update({ // This assumes you have AWS credentials exported in ENV
     accessKeyId: process.env.AMAZON_ACCESS_KEY_ID,
     secretAccessKey: process.env.AMAZON_SECRET_ACCESS_KEY

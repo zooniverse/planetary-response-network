@@ -48,8 +48,6 @@ var subject_set_id = '3614'
 
 /* Same as above, but generate a manifest afterwards (still needs work) */
 planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
-// var moments = [ [ 'data/L15-1509E-1187N_before.tif' ],
-//             [ 'data/L15-1509E-1187N_after.tif'] ]
   function (error, result){
     if(error){
       console.log(error);;
@@ -64,28 +62,16 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
       }
       console.log('Tilizing images...');
       async.series( task_list, function(error, result) {
-        // tilizing complete
         console.log('Tilizing complete.');
         generateManifest( manifest_file, function(){
-          // manifest generated
           uploadImages(manifest_file, project_id, subject_set_id, function(){
-            // subjects uploaded
             console.log('Finished uploading subjects.');
           })
         })
-        // uploadImages()
-        // callback(null, result)
       })
     }
   }
 )
-
-
-// uploadImages(manifest_file, project_id, subject_set_id, function(){
-//   console.log('Finished uploading subjects!');
-//   // createSubjects()
-// })
-
 
 function uploadImages(manifest_file, project_id, subject_set_id, callback){
   console.log('Uploading images...');
@@ -95,7 +81,6 @@ function uploadImages(manifest_file, project_id, subject_set_id, callback){
     parse(data, {columns: true}, function(err,rows){
 
       async.mapSeries(rows, uploadSubjectImages, function(error, result){
-        // console.log('UPLOADED IMAGES FROM PROCESSED ROWS ', result);
         async.mapSeries(rows, createSubjectFromManifestRow, function(error, result){
           panoptesAPI.saveSubjects(result, function(error, result){
             if(error){
@@ -125,7 +110,6 @@ function uploadSubjectImages(row, callback){
 }
 
 function createSubjectFromManifestRow(row, callback){
-  // console.log('createSubjectFromManifestRow() received ' + row);
   var metadata = row
   var locations = [
     { 'image/png': row['image1'] },
@@ -139,12 +123,6 @@ function createSubjectFromManifestRow(row, callback){
       subject_sets: [subject_set_id]
     }
   }
-  // DEBUG
-  // console.log('UPLOAD SUBJECT: ', subject);
-  // panoptesAPI.saveSubject(subject, function(error, result){
-  //   console.log('SUBJEST SAVED: ', result);
-  // })
-
   callback(null, subject)
 }
 
@@ -153,8 +131,6 @@ function generateManifest(manifest_file, callback){
   var csv_header = [ 'image1', 'image2', 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ]
 
   /* Get "before" tiles */
-
-
   glob("data/*after*.png", function (error, files) {
     async.mapSeries(files, fileMetaToCsv, function (error, csv_rows) {
       csv_rows.splice(0, 0, csv_header);

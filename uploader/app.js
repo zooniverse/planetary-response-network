@@ -11,6 +11,7 @@ process.chdir(__dirname)
 
 // Use Jade (http://jade-lang.org) for templates
 app.set('view engine', 'jade')
+app.set('views', __dirname + '/views')
 
 // Serve static assets
 app.use(express.static('public'))
@@ -20,13 +21,15 @@ app.get('/', function (req, res) {
   res.render('upload')
 })
 
+process.chdir('../') // return to root dir
+
 // Accept AOI uploads
 app.post('/aois', upload.single('file'), function (req, res, next) {
   res.header('Content-Type', 'text/plain')
   res.send('Upload complete, starting subject fetch job')
 
   // Start job, ensuring correct working directory
-  var script = '../planet-api-before-after-test'
+  var script = 'planet-api-before-after-test'
   var job = fork(script, [req.file.path])
 })
 

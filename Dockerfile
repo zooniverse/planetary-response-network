@@ -3,7 +3,13 @@ MAINTAINER  Sylvain Lasnier <sylvain.lasnier@gmail.com>
 
 # Add useful packages
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get -y upgrade && apt-get -y install curl bash-completion vim-tiny supervisor wget aptitude && apt-get clean
+RUN apt-get update && apt-get -y install curl
+RUN apt-get -y install bash-completion
+RUN apt-get -y install vim-tiny
+RUN apt-get -y install supervisor
+RUN apt-get -y install wget
+RUN apt-get -y install aptitude
+RUN apt-get clean
 
 # Setup root password for login process
 RUN echo root:root | chpasswd
@@ -33,7 +39,7 @@ RUN cd /generate-subjects-from-planet-api; npm install
 
 # Bundle app source
 COPY . /generate-subjects-from-planet-api
-RUN npm install
+#RUN npm install
 
-EXPOSE 8080
-CMD ["node", "/uploader/app.js"]
+EXPOSE 3736
+CMD ["node", "/generate-subjects-from-planet-api/uploader/app.js"]

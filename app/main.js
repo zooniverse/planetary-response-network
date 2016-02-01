@@ -29,11 +29,13 @@ app.post('/aois', upload.single('file'), function (req, res, next) {
   res.send('Upload complete, starting subject fetch job')
 
   // Start job, ensuring correct working directory
+  console.log('CWD: ', process.cwd() );
+  console.log('Loading AOI ', req.file.path);
   var script = 'planet-api-before-after-test'
   var job = fork(script, [req.file.path])
 })
 
 // Start the server
 app.listen(3736, function () {
-  console.log('Uploader app listening on port 3736')
+  console.log('Uploader app listening on port 3736...')
 })

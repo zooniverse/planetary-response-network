@@ -32,7 +32,10 @@ RUN apt-get install -y nodejs
 RUN apt-get install -y imagemagick
 RUN apt-get install -y git
 
-RUN git clone https://github.com/zooniverse/generate-subjects-from-planet-api.git && cd /generate-subjects-from-planet-api && git fetch origin before-after && git checkout before-after
+RUN git clone https://github.com/zooniverse/generate-subjects-from-planet-api.git \
+  && cd /generate-subjects-from-planet-api \
+  && git fetch origin dockerize \
+  && git checkout dockerize
 
 COPY package.json /generate-subjects-from-planet-api/package.json
 RUN cd /generate-subjects-from-planet-api; npm install

@@ -26,8 +26,6 @@ var after_url  = 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosai
 /* Read area of interest */
 var kml_file = process.argv[2] || 'data/central-kathmandu.kml'
 
-console.log('Opening file ', kml_file);
-
 var kml = jsdom(fs.readFileSync(kml_file))
 var geoJSON = tj.kml(kml)
 var bounds = geoJSON.features[0].geometry.coordinates[0]

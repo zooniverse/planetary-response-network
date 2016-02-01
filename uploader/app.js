@@ -3,7 +3,7 @@ multer      = require('multer')
 path        = require('path')
 fork        = require('child_process').fork
 
-upload      = multer({ dest: 'uploaded_aois' })
+upload      = multer({ dest: '/generate-subjects-from-planet-api/uploaded_aois' })
 app         = express()
 
 // Ensure correct working directory
@@ -31,8 +31,8 @@ app.post('/aois', upload.single('file'), function (req, res, next) {
   // Start job, ensuring correct working directory
   console.log('CWD: ', process.cwd() );
   console.log('Loading AOI ', req.file.path);
-  // var script = 'planet-api-before-after-test'
-  // var job = fork(script, [req.file.path])
+  var script = 'planet-api-before-after-test'
+  var job = fork(script, [req.file.path])
 })
 
 // Start the server

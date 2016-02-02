@@ -25,7 +25,7 @@ RUN alias ll='ls -halF'
 # Install app dependencies
 RUN apt-get update
 RUN apt-get install -y make gcc pkg-config
-RUN apt-get install -y libexiv2 libexiv2-dev
+RUN apt-get install -y libexiv2-14 libexiv2-dev
 RUN apt-get install -y sudo
 RUN curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
 RUN apt-get install -y nodejs

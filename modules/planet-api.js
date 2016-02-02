@@ -11,6 +11,7 @@ exports.fetchBeforeAndAfterMosaicFromAOI = fetchBeforeAndAfterMosaicFromAOI
 
 /* Sequentially download "before" and "after" mosaics */
 function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, callback){
+  console.log('Fetching mosaics...');
   async.series([
     async.apply( fetchMosaicFromAOI, bounds, before_url, 'before'),
     async.apply( fetchMosaicFromAOI, bounds, after_url,  'after')

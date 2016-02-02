@@ -26,6 +26,8 @@ var after_url  = 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosai
 /* Read area of interest */
 var kml_file = process.argv[2] || 'data/central-kathmandu.kml'
 
+console.log('Opening file ', kml_file);
+
 var kml = jsdom(fs.readFileSync(kml_file))
 var geoJSON = tj.kml(kml)
 var bounds = geoJSON.features[0].geometry.coordinates[0]
@@ -35,6 +37,8 @@ var manifest_file = 'data/manifest.csv'
 var project_id     = '2035'
 var subject_set_id = '3729' //'3617'
 var bucket = 'planetary-response-network'
+
+console.log('Fetching Mosaics...');
 
 /* Call Planet API and download GeoTIF and accompanying JSON files */
 planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,

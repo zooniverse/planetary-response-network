@@ -1,0 +1,9 @@
+planetsubjects:
+  dockerfile: Dockerfile
+  build: ./
+  volumes:
+    - ./:/generate-subjects-from-planet-api
+  ports:
+    - "3736:3736"
+  environment:
+    - "NODE_ENV=development"

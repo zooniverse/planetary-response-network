@@ -40,7 +40,7 @@ module.exports = function (filename, tileSize, overlap, callback){
     for( var offset_y=0, col=0; offset_y<=size.y; offset_y+=step_y, col++) {
 
       // crop current tile
-      var outfilename = dirname + '/' + basename + '_' + row + '_' + col + '.png'
+      var outfilename = dirname + '/' + basename + '_' + row + '_' + col + '.jpeg'
       var crop_option = tile_wid + 'x' + tile_hei + '+' + offset_x + '+' + offset_y
       var extent_option = tile_wid + 'x' + tile_hei
 

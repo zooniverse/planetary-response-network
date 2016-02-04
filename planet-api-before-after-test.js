@@ -126,8 +126,8 @@ function uploadSubjectImagesToS3(row, callback){
 function createSubjectFromManifestRow(row, callback){
   var metadata = row
   var locations = [
-    { 'image/png': row['image1'] },
-    { 'image/png': row['image2'] }
+    { 'image/jpeg': row['image1'] },
+    { 'image/jpeg': row['image2'] }
   ]
   var subject = {
     locations: locations,
@@ -145,7 +145,7 @@ function generateManifest(manifest_file, callback){
   var csv_header = [ 'image1', 'image2', 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ]
 
   /* Get "before" tiles */
-  glob("data/*after*.png", function (error, files) {
+  glob("data/*after*.jpeg", function (error, files) {
     async.mapSeries(files, fileMetaToCsv, function (error, csv_rows) {
       csv_rows.splice(0, 0, csv_header);
       csvStringify(csv_rows, function(error, output){

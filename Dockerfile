@@ -7,11 +7,9 @@ WORKDIR /generate-subjects-from-planet-api
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get -y upgrade && \
-    apt-get install --no-install-recommends -y ca-certificates sudo git curl bash-completion vim-tiny imagemagick libexiv2-dev make g++
+    apt-get install --no-install-recommends -y ca-certificates sudo git curl bash-completion vim-tiny imagemagick libexiv2-dev make g++ python
 
 RUN curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
-
-#RUN which python3
 
 RUN apt-get install --no-install-recommends -y nodejs && apt-get clean
 
@@ -25,7 +23,7 @@ RUN alias ll='ls -halF'
 
 ADD ./ /generate-subjects-from-planet-api
 
-#RUN npm install .
+RUN npm install .
 
 EXPOSE 3736
 CMD ["node", "/generate-subjects-from-planet-api/uploader/app.js"]

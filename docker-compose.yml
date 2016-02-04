@@ -7,3 +7,4 @@ planetsubjects:
     - "3736:3736"
   environment:
     - "NODE_ENV=development"
+    - "PLANET_API_KEY"

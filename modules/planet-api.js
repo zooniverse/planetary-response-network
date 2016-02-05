@@ -4,46 +4,72 @@ var fs         = require('fs')
 var jsonFormat = require('json-format')
 var async      = require('async')
 
-exports.fetchMosaicFromAOI = function ( bounds, url, key ){
+/* Handle module exports */
+exports.downloadFile                     = downloadFile
+exports.fetchMosaicFromAOI               = fetchMosaicFromAOI
+exports.fetchBeforeAndAfterMosaicFromAOI = fetchBeforeAndAfterMosaicFromAOI
 
-  console.log('Fetching mosaics intersecting with AOI...');
-
-  var intersects = JSON.stringify({
-      "type": "Polygon",
-        "coordinates": [bounds]
-  })
-
-  var params = { intersects: intersects }
-  auth = "Basic " + new Buffer(key + ":").toString("base64") // note: scoped to entire module
-
-  // send request to api
-  request({
-      url: url,
-      qs: params,
-      method: "GET",
-      headers: {
-          "Authorization": auth
-      },
-  }, function (error, response, body) {
-      if (!error) {
-          var data = JSON.parse(body)
-          processFeatures(data.features) // download images and data
+/* Sequentially download "before" and "after" mosaics */
+function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, callback){
+  async.series([
+    async.apply( fetchMosaicFromAOI, bounds, before_url, 'before'),
+    async.apply( fetchMosaicFromAOI, bounds, after_url,  'after')
+  ], function (error, result){
+      if (error){
+        callback(error)
+      } else{
+        console.log('Completed fetching before/after mosaics.')
+        callback(null,result)
       }
   })
 }
 
+/* Downloads a GeoTIF mosaic quad */
+function fetchMosaicFromAOI (bounds, url, label, callback){
+
+  console.log('Fetching \"' + label + '\" mosaics intersecting with AOI...');
+
+  var intersects = JSON.stringify({
+    "type": "Polygon",
+      "coordinates": [bounds]
+  })
+
+  var params = { intersects: intersects }
+
+  request({
+    url: url,
+    qs: params,
+    method: "GET",
+    headers: {
+        "Authorization": "Basic " + new Buffer(process.env.PLANET_API_KEY + ":").toString("base64")
+    },
+  },
+  function (error, response, body) {
+    if(error) {
+      callback(error)
+    } else{
+        var data = JSON.parse(body)
+        console.log('Found ' + data.features.length + ' mosaics.');
+        processFeatures(data.features, label,
+          function(result){
+            if(callback) callback(null, result)
+          }
+        ) // download images and data
+    }
+  })
+}
+
 /* Figure out what to download from JSON response */
-function processFeatures(features){
-  var download_list = [] // array of function calls
+function processFeatures(features, label, callback){
+  var task_list = [] // array of function calls
   for(var i in features){
     var url = features[i].properties.links.full // note: different from scenes script
-    var basename = url.split('/')[7]
-    var dest = 'data/' + basename + '.tif'
-    var meta_dest = 'data/' + basename + '.json'
+    var basename  = url.split('/')[7]
+    var dest      = 'data/' + basename + '_' + label + '.tif'
+    var meta_dest = 'data/' + basename + '_' + label + '.json'
 
-    download_list.push( async.apply(downloadFile, url, dest ) ) // add to array of function calls
-    // for debugging
-    // download_list = [ async.apply(downloadFile, 'https://api.planet.com/v0/scenes/ortho/20151031_100858_0b09/full?product=visual', dest ) ]
+    // prepare array of function calls
+    task_list.push( async.apply( downloadFile, url, dest ) )
 
     /* Write Metadata to JSON */
     fs.writeFile(meta_dest, jsonFormat(features[i]), function(err){
@@ -53,32 +79,32 @@ function processFeatures(features){
   }
 
   /* Download files from list */
-  async.parallel(download_list, function (err, result) {
-      // result now equals 'done'
-      if (err) {
-        console.error(err);
-      }
-      console.log('All downloads completed successfully.');
+  async.parallel(task_list, function (err, result) {
+    if (err) console.error(err);
+    if (callback) callback(result)
   });
 
 }
 
 /* Downloads a file at url to dest */
 function downloadFile(url, dest, callback){
-  var localStream = fs.createWriteStream(dest)
-  var out = request({
+  if (process.env.USE_MOSAIC_CACHE && fs.existsSync(dest)) {
+    callback(null, dest)
+  } else {
+    var localStream = fs.createWriteStream(dest)
+    var out = request({
       url: url,
       method: "GET",
-      headers: { "Authorization": auth }
-  });
-
-  out.on('response', function (resp) {
+      headers: { "Authorization": "Basic " + new Buffer(process.env.PLANET_API_KEY + ":").toString("base64") }
+    });
+    out.on('response', function (resp) {
       if (resp.statusCode === 200){
         out.pipe(localStream);
         localStream.on('close', function () {
           console.log('  File ' + dest + ' transfer complete.')
-          callback(null)
+          if (callback) callback(null, dest) // return path to downloaded file
         });
       }
-  })
+    })
+  }
 }

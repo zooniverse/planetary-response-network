@@ -1,4 +1,5 @@
 geoCoords = require('./modules/geo-coords.js')
+path      = require('path')
 
 var filename = process.argv[2]
 if (!filename) {
@@ -6,7 +7,8 @@ if (!filename) {
 	process.exit(1)
 }
 
-var basename = filename.split('/').reverse()[0].split('.')[0] // strip everything from filename (including extension)
+var basename = path.basename(filename).split('.')[0] // strip everything from filename (including extension)
+var dirname  = path.dirname(filename)
 
 metadata = geoCoords.getMetadata(filename)
-geoCoords.writeMetaToJSON( 'data/' + basename + '.json', metadata)
+geoCoords.writeMetaToJSON( dirname + '/' + basename + '.json', metadata)

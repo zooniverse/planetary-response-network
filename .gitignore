@@ -1,6 +1,9 @@
 node_modules
 data/*.tif
 data/*.png
+data/*.jpeg
 data/*.json
 data/manifest.csv
 data/nepal*mosaic
+.DS_Store
+uploaded_aois

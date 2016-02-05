@@ -8,3 +8,7 @@ planetsubjects:
   environment:
     - "NODE_ENV=development"
     - "PLANET_API_KEY"
+    - "AMAZON_ACCESS_KEY_ID"
+    - "AMAZON_SECRET_ACCESS_KEY"
+    - "ZOONIVERSE_USERNAME"
+    - "ZOONIVERSE_PASSWORD"

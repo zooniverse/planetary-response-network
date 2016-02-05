@@ -3,7 +3,7 @@ multer      = require('multer')
 path        = require('path')
 fork        = require('child_process').fork
 
-upload      = multer({ dest: '/generate-subjects-from-planet-api/uploaded_aois' })
+upload      = multer({ dest: 'uploaded_aois' })
 app         = express()
 
 // Ensure correct working directory

@@ -45,26 +45,6 @@ function saveSubjects(subjects){
 
   api.update({'params.admin': true});
   auth.signIn(credentials).then(function(){
-
-<<<<<<< HEAD
-    var delay = 1000;
-    for(var i=0; i<subjects.length; i++){
-      subject = subjects[i];
-      delay += 0;
-      setTimeout(function(subject) {
-        return function() {
-          api.type('subjects').create(subject).save()
-            .then(function(subject){
-             console.log("CREATED SUBJECT: ," + JSON.stringify(subject) );
-            })
-            .catch(function(error) {
-             console.log("Error saving subject data! ", error);
-             process.exit(1);
-            })
-        }
-      }(subject), delay);
-    }
-=======
     // var delay = 1000;
     // for(var i=0; i<subjects.length; i++){
     //   subject = subjects[i];
@@ -82,8 +62,6 @@ function saveSubjects(subjects){
     //     }
     //   }(subject), delay);
     // }
-
->>>>>>> 02d509c... fix panoptes-client
   });
 }
 

@@ -15,10 +15,6 @@ var geoCoords      = require('./geo-coords')
  * @param  {Function} callback
  */
 module.exports = function (filename, tileSize, overlap, callback){
-  // // DEBUG CODE!!!
-  // tileSize = 4096 + 1
-  // overlap = 0
-
   var tile_wid = tileSize;
   var tile_hei = tileSize;
   var step_x = tile_wid - overlap;
@@ -56,11 +52,9 @@ module.exports = function (filename, tileSize, overlap, callback){
       center       : pxToGeo( offset_x + tile_wid / 2, offset_y + tile_hei / 2, size.x, size.y, reference_coordinates) // NOT (lower_right.lat - upper_left.lat, lower_right.lon - upper_left.lon) because meridians and parallels
     }
 
-    console.log('creating tile...', task)
+    // console.log('creating tile...', task) // DEBUG CODE
     im.convert([ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
       if (err) return done(err)
-
-      // imgMeta.write(outfilename, coords, done)  // write coordinates to tile image metadata
       imgMeta.write(outfilename, '-userComment', coords, done)  // write coordinates to tile image metadata
     })
   }
@@ -72,7 +66,7 @@ module.exports = function (filename, tileSize, overlap, callback){
   // Completion callback
   queue.drain = function (error, result) {
     var prof2 = new Date().getTime() / 1000
-    console.log('Finished tilizing batch...');
+    console.log('  Finished tilizing mosaic: ' + filename);
     callback(error, result)
   }
 

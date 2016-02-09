@@ -18,7 +18,12 @@ function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, callba
       if (error){
         callback(error)
       } else{
+<<<<<<< HEAD
         console.log('Completed fetching before/after mosaics.')
+=======
+        var elapsed_time = parseFloat( (Date.now()-start_time) / 60 / 1000).toFixed(2)
+        console.log('Mosaics acquired (' + elapsed_time + ' minutes)');
+>>>>>>> ae54dd2... remove unused code and leftover exiv2 files; clean up console logs; use (older) local panoptes-javascript-client module
         callback(null,result)
       }
   })
@@ -89,6 +94,7 @@ function processFeatures(features, label, callback){
 /* Downloads a file at url to dest */
 function downloadFile(url, dest, callback){
   if (process.env.USE_MOSAIC_CACHE && fs.existsSync(dest)) {
+    console.log('  Using cached mosaic: ' + dest);
     callback(null, dest)
   } else {
     var localStream = fs.createWriteStream(dest)

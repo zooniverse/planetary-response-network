@@ -22,7 +22,7 @@
     "jsdom": "^7.2.2",
     "json-format": "~0.1.1",
     "multer": "^1.1.0",
-    "panoptes-client": "^0.1.2",
+    "panoptes-client": "^2.0.1",
     "request": "~2.67.0",
     "togeojson": "^0.13.0",
     "xmlhttprequest-cookie": "^0.9.4",

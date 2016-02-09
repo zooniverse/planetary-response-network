@@ -3,7 +3,7 @@ var panoptesClient = require('panoptes-client')
 
 // project info for planetary response network
 var project_id     = '2035'
-var subject_set_id = '3584'
+var subject_set_id = '3679'
 
 var auth = panoptesClient.auth
 var api  = panoptesClient.apiClient
@@ -46,6 +46,7 @@ function saveSubjects(subjects){
   api.update({'params.admin': true});
   auth.signIn(credentials).then(function(){
 
+<<<<<<< HEAD
     var delay = 1000;
     for(var i=0; i<subjects.length; i++){
       subject = subjects[i];
@@ -63,6 +64,26 @@ function saveSubjects(subjects){
         }
       }(subject), delay);
     }
+=======
+    // var delay = 1000;
+    // for(var i=0; i<subjects.length; i++){
+    //   subject = subjects[i];
+    //   delay += 0;
+    //   setTimeout(function(subject) {
+    //     return function() {
+    //       api.type('subjects').create(subject).save()
+    //         .then(function(subject){
+    //          console.log("CREATED SUBJECT: ," + JSON.stringify(subject) );
+    //         })
+    //         .catch(function(error) {
+    //          console.log("Error saving subject data! ", error);
+    //          process.exit(1);
+    //         })
+    //     }
+    //   }(subject), delay);
+    // }
+
+>>>>>>> 02d509c... fix panoptes-client
   });
 }
 

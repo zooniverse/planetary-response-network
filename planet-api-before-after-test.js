@@ -33,7 +33,7 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 /* Set parameters */
 var manifest_file = 'data/manifest.csv'
 var project_id     = '2035'
-var subject_set_id = '3676' //'3617'
+var subject_set_id = '3679' //'3617'
 var bucket = 'planetary-response-network'
 
 /* Call Planet API and download GeoTIF and accompanying JSON files */
@@ -53,7 +53,9 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
       }
       console.log('Tilizing images...');
       async.series( task_list, function(error, result) {
-        console.log('Tilizing complete.');
+        var elapsed_time = parseFloat( (Date.now()-start_time) / 60 / 1000).toFixed(2)
+        console.log('Tilizing complete (' + elapsed_time + ' minutes)');
+        console.log('Generating manifest file...');
         generateManifest( manifest_file, function(){
           deployPanoptesSubjects(manifest_file, project_id, subject_set_id, function(){
             // console.log('Finished uploading subjects.');

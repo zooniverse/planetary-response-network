@@ -60,21 +60,22 @@ module.exports = function (filename, tileSize, overlap, callback){
     im.convert([ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
       if (err) return done(err)
 
-      imgMeta.write(outfilename, coords, done)  // write coordinates to tile image metadata
+      // imgMeta.write(outfilename, coords, done)  // write coordinates to tile image metadata
+      imgMeta.write(outfilename, '-userComment', coords, done)  // write coordinates to tile image metadata
     })
   }
 
   // Init task queue
   var concurrency = os.cpus().length
   var queue = async.queue(create_tile_task, concurrency)
-  
+
   // Completion callback
   queue.drain = function (error, result) {
     var prof2 = new Date().getTime() / 1000
     console.log('Finished tilizing batch...');
     callback(error, result)
   }
-  
+
   // Push tile tasks into queue
   for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=step_x, row+=1) {
     for( var offset_y=0, col=0; offset_y<=size.y; offset_y+=step_y, col+=1) {

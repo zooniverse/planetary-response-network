@@ -159,11 +159,12 @@ function generateManifest(manifest_file, callback){
 }
 
 var fileMetaToCsv = function (filename, callback) {
-  imgMeta.read(filename, function (err, metadata) {
+  imgMeta.read(filename, ['-userComment'], function (err, metadata) {
     if (err) return callback(err)
 
     try {
-      coords = JSON.parse( metadata["Exif.Photo.UserComment"] )
+      coords = decodeURIComponent(metadata["userComment"]) //JSON.parse( metadata["Exif.Photo.UserComment"] )
+      console.log('RETRIEVED METADATA = ', coords);
       // Note: might wanna check if "after" file exists
       callback(null, [ filename, filename.replace('after','before'), coords.upper_left.lon, coords.upper_left.lat, coords.upper_right.lon, coords.upper_right.lat, coords.bottom_right.lon, coords.bottom_right.lat, coords.bottom_left.lon, coords.bottom_left.lat, coords.center.lon, coords.center.lat ])
     } catch (e) {

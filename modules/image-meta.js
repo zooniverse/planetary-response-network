@@ -10,7 +10,7 @@ function writeImgMeta(filename, tag, content, callback){
   console.log('RUNNING COMMAND: ');
   console.log('exiftool ' + tag + '=' + encodeURIComponent(JSON.stringify(content)) + ' ' + filename);
 
-  ChildProcess.exec('exiftool ' + tag + '=' + encodeURIComponent(JSON.stringify(content)) + ' ' + filename, function(error,stdout,stderr){
+  ChildProcess.exec('exiftool -overwrite_original ' + tag + '=' + encodeURIComponent(JSON.stringify(content)) + ' ' + filename, function(error,stdout,stderr){
     if(error){
       console.log(error);
     } else{

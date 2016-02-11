@@ -1,6 +1,10 @@
 global.XMLHttpRequest = require('xmlhttprequest-cookie').XMLHttpRequest
 var panoptesClient    = require('panoptes-client')
 
+var auth = panoptesClient.auth
+var api  = panoptesClient.apiClient
+// var talkClient = panoptesClient.talkClient
+
 exports.saveSubjects = saveSubjects
 
 function saveSubjects(subjects, callback){
@@ -12,8 +16,9 @@ function saveSubjects(subjects, callback){
     password: process.env.ZOONIVERSE_PASSWORD
   };
 
-  api.update({'params.admin': true});
-  auth.signIn(credentials).then(function(){
+  // api.update({'params.admin': true});  // careful when using admin mode!
+  auth.signIn(credentials).then(function(user){
+    // console.log('Signed in user: ', user);
     var delay = 0;
     for(var i=0; i<subjects.length; i++){
       subject = subjects[i];

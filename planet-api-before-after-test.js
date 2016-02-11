@@ -33,7 +33,7 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 /* Set parameters */
 var manifest_file = 'data/manifest.csv'
 var project_id     = '2035'
-var subject_set_id = '3617'
+var subject_set_id = '3679' //'3617'
 var bucket = 'planetary-response-network'
 
 /* Call Planet API and download GeoTIF and accompanying JSON files */
@@ -52,8 +52,11 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
         }
       }
       console.log('Tilizing images...');
+      var start_time = Date.now()
       async.series( task_list, function(error, result) {
-        console.log('Tilizing complete.');
+        var elapsed_time = parseFloat( (Date.now()-start_time) / 60 / 1000).toFixed(2)
+        console.log('Tilizing complete (' + elapsed_time + ' minutes)');
+        console.log('Generating manifest file...');
         generateManifest( manifest_file, function(){
           deployPanoptesSubjects(manifest_file, project_id, subject_set_id, function(){
             // console.log('Finished uploading subjects.');
@@ -63,10 +66,6 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
     }
   }
 )
-
-// deployPanoptesSubjects(manifest_file, project_id, subject_set_id, function(){
-//   console.log('Finished uploading subjects.');
-// })
 
 function deployPanoptesSubjects(manifest_file, project_id, subject_set_id, callback){
   console.log('Uploading images...');
@@ -159,11 +158,11 @@ function generateManifest(manifest_file, callback){
 }
 
 var fileMetaToCsv = function (filename, callback) {
-  imgMeta.read(filename, function (err, metadata) {
+  imgMeta.read(filename, ['-userComment'], function (err, metadata) {
     if (err) return callback(err)
 
     try {
-      coords = JSON.parse( metadata["Exif.Photo.UserComment"] )
+      coords = JSON.parse( decodeURIComponent(metadata["userComment"]) ) //JSON.parse( metadata["Exif.Photo.UserComment"] )
       // Note: might wanna check if "after" file exists
       callback(null, [ filename, filename.replace('after','before'), coords.upper_left.lon, coords.upper_left.lat, coords.upper_right.lon, coords.upper_right.lat, coords.bottom_right.lon, coords.bottom_right.lat, coords.bottom_left.lon, coords.bottom_left.lat, coords.center.lon, coords.center.lat ])
     } catch (e) {

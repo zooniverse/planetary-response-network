@@ -11,6 +11,7 @@ exports.fetchBeforeAndAfterMosaicFromAOI = fetchBeforeAndAfterMosaicFromAOI
 
 /* Sequentially download "before" and "after" mosaics */
 function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, callback){
+  var start_time = Date.now()
   async.series([
     async.apply( fetchMosaicFromAOI, bounds, before_url, 'before'),
     async.apply( fetchMosaicFromAOI, bounds, after_url,  'after')
@@ -18,7 +19,8 @@ function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, callba
       if (error){
         callback(error)
       } else{
-        console.log('Completed fetching before/after mosaics.')
+        var elapsed_time = parseFloat( (Date.now()-start_time) / 60 / 1000).toFixed(2)
+        console.log('Mosaics acquired (' + elapsed_time + ' minutes)');
         callback(null,result)
       }
   })
@@ -89,6 +91,7 @@ function processFeatures(features, label, callback){
 /* Downloads a file at url to dest */
 function downloadFile(url, dest, callback){
   if (process.env.USE_MOSAIC_CACHE && fs.existsSync(dest)) {
+    console.log('  Using cached mosaic: ' + dest);
     callback(null, dest)
   } else {
     var localStream = fs.createWriteStream(dest)

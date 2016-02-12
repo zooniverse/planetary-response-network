@@ -1,7 +1,8 @@
 'use strict'
+const path = require('path')
 const fork = require('child_process').fork
 
-const SCRIPT = __dirname + '/../../planet-api-before-after-test'
+const SCRIPT = path.join(__dirname, '../../planet-api-before-after-test')
 
 module.exports = class SubjectJob {
     constructor (file, username, password) {
@@ -11,10 +12,13 @@ module.exports = class SubjectJob {
         this.password = password
         
         // Create child process
-        this.job = fork(SCRIPT, [this.file], Object.assign(process.env, {
-            ZOONIVERSE_USERNAME: this.username,
-            ZOONIVERSE_PASSWORD: this.password
-        }))
+        this.job = fork(SCRIPT, [this.file], {
+            env: Object.assign(process.env, {
+                ZOONIVERSE_USERNAME: this.username,
+                ZOONIVERSE_PASSWORD: this.password
+            }),
+            cwd: path.join(__dirname, '../..')
+        })
         
         // @todo store output from child process
         this.output = []

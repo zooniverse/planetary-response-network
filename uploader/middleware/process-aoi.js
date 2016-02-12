@@ -2,7 +2,7 @@
 const async = require('async')
 const createSubjectJob = require('../lib/create-subject-job')
 
-const queue = async.queue(createSubjectJob, 3)
+const queue = async.queue(createSubjectJob, process.env.AOI_JOB_CONCURRENCY || 1)
 
 module.exports = function (req, res, next) {
   // Start job

@@ -8,6 +8,8 @@ Clone and `npm install`. A number of environmental variables must be set:
 * to deploy to subjects to your Zooniverse project you'll need to [build a project](https://www.zooniverse.org/lab) and set the variables `ZOONIVERSE_USERNAME` and `ZOONIVERSE_PASSWORD` with your username and password, respectively
 * `AMAZON_ACCESS_KEY_ID` and `AMAZON_SECRET_ACCESS_KEY` an S3 bucket in order to deploy subjects
 
+Run `npm start` to launch the app locally.
+
 There are three scripts set up to demonstrate what's currently implemented.
 
 ### Fetching Mosaics by Area of Interest (AOI)

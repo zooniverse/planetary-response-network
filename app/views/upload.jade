@@ -7,12 +7,6 @@ block content
     button(type="submit") Upload
   
 block scripts
-  script(src="/js/uploader.js")
-  script.
-    new Uploader(document.querySelector('.uploader'), {
-      target: '/aois',
-      acceptedTypes: ['application/vnd.google-earth.kml+xml']
-    })
-
+  script(src="app.js")
 block styles
   link(rel="stylesheet" type="text/css" href="/css/uploader.css")

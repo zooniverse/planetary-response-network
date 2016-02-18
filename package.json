@@ -10,7 +10,7 @@
     "uploader": "USE_MOSAIC_CACHE=1 nodemon app/main.js",
     "watch": "watchify app/javascripts/index.js -o app/public/app.js -v",
     "build": "browserify app/javascripts/index.js -o app/public/app.js",
-    "start": "npm run watch & nodemon app/main.js"
+    "start": "npm run watch & USE_MOSAIC_CACHE=1 nodemon --watch app app/main.js"
   },
   "dependencies": {
     "async": "~1.5.2",

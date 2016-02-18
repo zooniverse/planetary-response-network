@@ -1,0 +1,14 @@
+planetsubjects:
+  dockerfile: Dockerfile
+  build: ./
+  volumes:
+    - ./:/generate-subjects-from-planet-api
+  ports:
+    - "3736:3736"
+  environment:
+    - "NODE_ENV=development"
+    - "PLANET_API_KEY"
+    - "AMAZON_ACCESS_KEY_ID"
+    - "AMAZON_SECRET_ACCESS_KEY"
+    - "ZOONIVERSE_USERNAME"
+    - "ZOONIVERSE_PASSWORD"

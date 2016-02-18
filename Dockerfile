@@ -7,7 +7,7 @@ WORKDIR /generate-subjects-from-planet-api
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get -y upgrade && \
-    apt-get install --no-install-recommends -y ca-certificates sudo git curl bash-completion vim-tiny imagemagick libexiv2-dev make g++ python
+    apt-get install --no-install-recommends -y ca-certificates sudo git curl bash-completion vim-tiny imagemagick libimage-exiftool-perl make g++ python
 
 RUN curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
 
@@ -26,4 +26,4 @@ ADD ./ /generate-subjects-from-planet-api
 RUN npm install .
 
 EXPOSE 3736
-CMD ["node", "/generate-subjects-from-planet-api/uploader/app.js"]
+CMD ["npm", "start"]

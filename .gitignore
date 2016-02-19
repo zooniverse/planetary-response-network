@@ -9,3 +9,4 @@ data/nepal*mosaic
 .DS_Store
 uploaded_aois
 npm-debug.log
+supervisord.log

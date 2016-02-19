@@ -1,3 +1,4 @@
+processAoi  = require('./middleware/process-aoi')
 express     = require('express')
 multer      = require('multer')
 path        = require('path')
@@ -24,16 +25,7 @@ app.get('/', function (req, res) {
 process.chdir('../') // return to root dir
 
 // Accept AOI uploads
-app.post('/aois', upload.single('file'), function (req, res, next) {
-  res.header('Content-Type', 'text/plain')
-  res.send('Upload complete, starting subject fetch job')
-
-  // Start job, ensuring correct working directory
-  console.log('CWD: ', process.cwd() );
-  console.log('Loading AOI ', req.file.path);
-  var script = 'planet-api-before-after-test'
-  var job = fork(script, [req.file.path])
-})
+app.post('/aois', upload.single('file'), processAoi)
 
 // Start the server
 app.listen(3736, function () {

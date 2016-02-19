@@ -73,7 +73,7 @@ function processFeatures(features, label, callback){
     var meta_dest = 'data/' + basename + '_' + label + '.json'
 
     // prepare array of function calls
-    task_list.push( async.apply( downloadFile, url, dest ) )
+    task_list.push( async.apply( downloadFile, { url: url, dest: dest } ) )
 
     /* Write Metadata to JSON */
     fs.writeFile(meta_dest, jsonFormat(features[i]), function(err){
@@ -91,8 +91,10 @@ function processFeatures(features, label, callback){
 }
 
 /* Downloads a file at url to dest */
-function downloadFile(url, dest, callback){
-  if (process.env.USE_MOSAIC_CACHE && fs.existsSync(dest)) {
+function downloadFile(options, callback){
+  const url = options.url
+  const dest = options.dest
+  if (!options.skip_cache && fs.existsSync(dest)) {
     console.log('  Using cached mosaic: ' + dest);
     callback(null, dest)
   } else {

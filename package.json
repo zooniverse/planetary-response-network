@@ -6,11 +6,13 @@
     "planet-api-test": "node planet-api-test.js",
     "geo-coords-test": "node geo-coords-test.js data/L15-1509E-1188N.tif",
     "tilize-test": "node tilize-images.js data/L15-1509E-1188N.tif",
-    "planet-api-before-after-test": "USE_MOSAIC_CACHE=1 node planet-api-before-after-test.js",
-    "uploader": "USE_MOSAIC_CACHE=1 nodemon app/main.js",
+    "planet-api-before-after-test": "node planet-api-before-after-test.js",
+    "uploader": "nodemon app/main.js",
     "watch": "watchify app/javascripts/index.js -o app/public/app.js -v",
     "build": "browserify app/javascripts/index.js -o app/public/app.js",
-    "start": "npm run watch & USE_MOSAIC_CACHE=1 nodemon --watch app app/main.js"
+    "producer": "npm run watch & nodemon --watch app app/main.js",
+    "consumer": "NODE_ENV=staging nodemon --watch generator generator/main.js",
+    "start": "npm run producer & npm run consumer"
   },
   "dependencies": {
     "async": "~1.5.2",
@@ -29,6 +31,8 @@
     "nodemon": "^1.5.0-alpha4",
     "panoptes-client": "^2.0.1",
     "request": "~2.67.0",
+    "rsmq": "^0.4.0",
+    "rsmq-worker": "^0.3.8",
     "togeojson": "^0.13.0",
     "watchify": "^3.7.0",
     "xmlhttprequest-cookie": "^0.9.4",

@@ -57,6 +57,7 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
       }
       console.log('Tilizing images...');
       var start_time = Date.now()
+
       async.series( task_list, function(error, result) {
         var elapsed_time = parseFloat( (Date.now()-start_time) / 60 / 1000).toFixed(2)
         console.log('Tilizing complete (' + elapsed_time + ' minutes)');

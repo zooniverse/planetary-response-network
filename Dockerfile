@@ -7,7 +7,7 @@ WORKDIR /generate-subjects-from-planet-api
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get -y upgrade && \
-    apt-get install --no-install-recommends -y ca-certificates sudo git curl bash-completion vim-tiny imagemagick libimage-exiftool-perl make g++ python
+    apt-get install --no-install-recommends -y ca-certificates sudo git curl bash-completion vim-tiny supervisor imagemagick libimage-exiftool-perl make g++ python
 
 RUN curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
 
@@ -21,9 +21,12 @@ RUN update-locale LANG=en_US.UTF-8
 RUN alias ls='ls --color=auto'
 RUN alias ll='ls -halF'
 
+ADD supervisord.conf /etc/supervisor/supervisord.conf
+
 ADD ./ /generate-subjects-from-planet-api
 
 RUN npm install .
 
 EXPOSE 3736
-CMD ["npm", "start"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+# CMD ["echo", "hello there!"]

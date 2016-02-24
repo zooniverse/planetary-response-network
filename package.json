@@ -10,8 +10,8 @@
     "uploader": "nodemon app/main.js",
     "watch": "watchify app/javascripts/index.js -o app/public/app.js -v",
     "build": "browserify app/javascripts/index.js -o app/public/app.js",
-    "producer": "npm run watch & nodemon --watch app app/main.js",
-    "consumer": "NODE_ENV=staging nodemon --watch generator generator/main.js",
+    "producer": "node server.js",
+    "consumer": "NODE_ENV=production node generator/main.js",
     "start": "npm run producer & npm run consumer"
   },
   "dependencies": {

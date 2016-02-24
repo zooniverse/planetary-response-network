@@ -10,7 +10,7 @@ services:
   planetsubjects:
     build: ./
     volumes:
-      - ./:/generate-subjects-from-planet-api
+      - ./:/planetary-response-network
     ports:
       - "3736:3736"
     environment:
@@ -20,4 +20,3 @@ services:
       - "AMAZON_SECRET_ACCESS_KEY"
       - "ZOONIVERSE_USERNAME"
       - "ZOONIVERSE_PASSWORD"
-

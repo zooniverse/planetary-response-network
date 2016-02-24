@@ -53,6 +53,9 @@
     "yargs": "^3.31.0"
   },
   "devDependencies": {
+    "css-loader": "^0.23.1",
+    "style-loader": "^0.13.0",
+    "stylus-loader": "^1.5.1",
     "webpack-dev-middleware": "^1.5.1"
   }
 }

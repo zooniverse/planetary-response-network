@@ -3,7 +3,6 @@ MAINTAINER Sascha Ishikawa <sascha@zooniverse.org>
 WORKDIR /planetary-response-network
 ENV DEBIAN_FRONTEND noninteractive
 
-# Note: libgdal-dev library included for scratch gdal builds
 RUN apt-get update && apt-get -y upgrade && \
     apt-get install --no-install-recommends -y ca-certificates sudo git curl bash-completion vim-tiny supervisor imagemagick libgdal-dev libimage-exiftool-perl make g++ python
 RUN curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
@@ -22,9 +21,10 @@ ADD ./ /planetary-response-network
 
 RUN npm install .
 
-# Gdal binary crashes on mac VM, so build from scratch
-RUN npm install gdal --build-from-source --shared_gdal
-
 EXPOSE 3736
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 # CMD ["echo", "hello there!"]
+
+# # Gdal binary crashes on mac VM, so build from scratch by running this on the instance:
+# apt-get install --no-install-recommends -y libgdal-dev && \
+#   npm install gdal --build-from-source --shared_gdal

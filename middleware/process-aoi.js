@@ -1,7 +1,7 @@
 'use strict'
 const path = require('path')
 const queue = require('../lib/queue')
-const UPLOAD_PATH = __dirname + '/../../uploaded_aois'
+const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
 
 module.exports = function (req, res, next) {
   // Send job to queue

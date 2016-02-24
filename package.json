@@ -1,5 +1,5 @@
 {
-  "name": "generateSubjectsFromPlanetAPI",
+  "name": "planetary-response-network",
   "description": "Create Zooniverse subjedcts using Planet Labs API to get images by area of interest (AOI).",
   "license": "BSD-2-Clause",
   "scripts": {
@@ -11,7 +11,7 @@
     "watch": "watchify app/javascripts/index.js -o app/public/app.js -v",
     "build": "browserify app/javascripts/index.js -o app/public/app.js",
     "producer": "node server.js",
-    "consumer": "NODE_ENV=production node generator/main.js",
+    "consumer": "node generator/main.js",
     "start": "npm run producer & npm run consumer"
   },
   "dependencies": {

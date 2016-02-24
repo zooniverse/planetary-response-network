@@ -1,6 +1,6 @@
 FROM ubuntu:14.04
 MAINTAINER Sascha Ishikawa <sascha@zooniverse.org>
-WORKDIR /generate-subjects-from-planet-api
+WORKDIR /planetary-response-network
 ENV DEBIAN_FRONTEND noninteractive
 
 # Note: libgdal-dev library included for scratch gdal builds
@@ -18,14 +18,12 @@ RUN alias ls='ls --color=auto'
 RUN alias ll='ls -halF'
 
 ADD supervisord.conf /etc/supervisor/supervisord.conf
-ADD ./ /generate-subjects-from-planet-api
+ADD ./ /planetary-response-network
 
 RUN npm install .
 
 # Gdal binary crashes on mac VM, so build from scratch
 RUN npm install gdal --build-from-source --shared_gdal
-
-ENV NODE_ENV=development
 
 EXPOSE 3736
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

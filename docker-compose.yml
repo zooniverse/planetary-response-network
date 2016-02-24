@@ -14,7 +14,7 @@ services:
     ports:
       - "3736:3736"
     environment:
-      - "NODE_ENV=development"
+      - "NODE_ENV=staging"
       - "PLANET_API_KEY"
       - "AMAZON_ACCESS_KEY_ID"
       - "AMAZON_SECRET_ACCESS_KEY"

@@ -1,4 +1,4 @@
-# generate-subjects-from-planet-api
+# Planetary Response Network
 Create Zooniverse subjects via Planet Labs API using area of interest (AOI) queries.
 
 ## Getting Started
@@ -16,4 +16,3 @@ Run `docker-compose up`. The main application container and a redis container wi
 
 ## Tests
 We should write some of these.
-

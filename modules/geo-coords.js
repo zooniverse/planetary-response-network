@@ -47,11 +47,7 @@ exports.getMetadata = function (filename) {
 			y: geotransform[3] + corner.x * geotransform[4] + corner.y * geotransform[5]
 		};
 		var pt_wgs84    = coord_transform.transformPoint(pt_orig)
-		var lat_dms = gdal.decToDMS(pt_wgs84.y, 'Lat')
-		var lon_dms = gdal.decToDMS(pt_wgs84.x, 'Long')
-		var dd = dmsToDd( lat_dms, lon_dms ) // convert to decimal degrees
-		var description = util.format('%s (%s, %s)', corner_name, dd.lat, dd.lon );
-		coordinates[corner_name] = {lat: dd.lat, lon: dd.lon }
+		coordinates[corner_name] = {lat: pt_wgs84.y, lon: pt_wgs84.x }
 	});
 
 	// // debugging code
@@ -69,9 +65,3 @@ exports.writeMetaToJSON = function (filename, metadata) {
 	fs.writeFileSync(filename, jsonFormat(content));
 }
 
-/* Convert DMS to decimal degrees */
-function dmsToDd (lat, lon) {
-	lat = parseFloat( lat.split('d')[0] ) + parseFloat( lat.split('\'')[0].split('d')[1] )/60 + parseFloat( lat.split('\'')[1].split('\"')[0] )/3600
-	lon = parseFloat( lon.split('d')[0] ) + parseFloat( lon.split('\'')[0].split('d')[1] )/60 + parseFloat( lon.split('\'')[1].split('\"')[0] )/3600
-	return {lat: lat, lon: lon}
-}

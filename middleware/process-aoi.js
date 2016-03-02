@@ -6,6 +6,8 @@ const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
 
 module.exports = function (options) {
   return function (req, res, next) {
+    var project_id = req.body.project_id
+    var subject_set_id = req.body.subject_set_id
     res.header('Content-Type', 'text/plain')
     if (options.useQueue) {
       // Send job to queue
@@ -16,8 +18,9 @@ module.exports = function (options) {
     } else {
       res.send('Upload complete, starting subject fetch job')
       // Start job, ensuring correct working directory
-      var script = 'planet-api-before-after-test'
-      var job = fork(script, [req.file.path])
+      var script = 'generate-planet-labs-subjects'
+      var aoi_file = req.file.path
+      var job = fork(script, [project_id, subject_set_id, aoi_file])
     }
   }
 }

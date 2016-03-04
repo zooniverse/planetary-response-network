@@ -17,19 +17,14 @@ var geoCoords      = require('./geo-coords')
 module.exports = function (filename, tileSize, overlap, callback){
   var tile_wid = tileSize;
   var tile_hei = tileSize;
-  var step_x = tile_wid - overlap;
-  var step_y = tile_hei - overlap;
+  var step_x = 4 * tile_wid - overlap;
+  var step_y = 4 * tile_hei - overlap;
 
   var basename = path.basename(filename).split('.')[0]
   var dirname  = path.dirname(filename)
   var metadata = geoCoords.getMetadata(filename)
-
-  var json_filename = dirname + '/' + basename + '.json'
-  geoCoords.writeMetaToJSON( json_filename, metadata ) // write metadata for coordinate interpolations
-
-  var content = JSON.parse( fs.readFileSync( dirname + '/' + basename + '.json' ) )
-  var size = content.metadata.size
-  var reference_coordinates = content.metadata.reference_coordinates
+  var size = metadata.size
+  var reference_coordinates = metadata.reference_coordinates
 
   // Tile creator
   var create_tile_task = function (task, done) {
@@ -64,13 +59,13 @@ module.exports = function (filename, tileSize, overlap, callback){
   var queue = async.queue(create_tile_task, concurrency)
 
   // Completion callback
-  queue.drain = function (error, result) {
-    var prof2 = new Date().getTime() / 1000
+  queue.drain = function (error) {
     console.log('  Finished tilizing mosaic: ' + filename);
-    callback(error, result)
+    callback(error, files)
   }
 
   // Push tile tasks into queue
+  var files = [];
   for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=step_x, row+=1) {
     for( var offset_y=0, col=0; offset_y<=size.y; offset_y+=step_y, col+=1) {
       queue.push({
@@ -78,6 +73,8 @@ module.exports = function (filename, tileSize, overlap, callback){
         col: col,
         offset_x: offset_x,
         offset_y: offset_y
+      }, function (err, file) {
+        files.push(file);
       })
     }
   } // end outer for loop

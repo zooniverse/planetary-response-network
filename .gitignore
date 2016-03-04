@@ -1,11 +1,6 @@
 node_modules
 npm-debug.log
-data/*.tif
-data/*.png
-data/*.jpeg
-data/*.json
-data/manifest.csv
-data/nepal*mosaic
+data/
 .DS_Store
 npm-debug.log
 supervisord.log

@@ -32,6 +32,7 @@ var manifest_file = 'data/manifest.csv'
 var bucket = 'planetary-response-network'
 
 console.log('Fetching Mosaics...');
+process.send({status: 'fetching_mosaics'})
 
 /* Call Planet API and download GeoTIF and accompanying JSON files */
 planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
@@ -48,13 +49,15 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
           task_list.push( async.apply( tilizeImage, image_file, 480, 160 ) )
         }
       }
-      console.log('Tilizing images...');
+      console.log('Tilizing images...')
+      process.send({status: 'tilizing_images'})
       var start_time = Date.now()
 
       async.series( task_list, function(error, result) {
         var elapsed_time = parseFloat( (Date.now()-start_time) / 60 / 1000).toFixed(2)
         console.log('Tilizing complete (' + elapsed_time + ' minutes)');
         console.log('Generating manifest file...');
+        process.send({status: 'generating_manifest'})
         generateManifest( manifest_file, function(){
           deployPanoptesSubjects(manifest_file, project_id, subject_set_id, function(){
             // console.log('Finished uploading subjects.');
@@ -67,6 +70,7 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
 
 function deployPanoptesSubjects(manifest_file, project_id, subject_set_id, callback){
   console.log('Uploading images...');
+  process.send({status: 'uploading_images'})
 
   // maybe clean up using async.waterfall?
   fs.readFile(manifest_file, function(error,data){

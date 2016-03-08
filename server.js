@@ -5,6 +5,10 @@ const multer     = require('multer');
 const yargs      = require('yargs');
 const path       = require('path');
 
+// const {getStatus} = require('./middleware/process-aoi');
+
+console.log('getStatus = ', processAoi);
+
 // Parse options
 const argv = yargs
   .describe('use-queue', 'Send subject-creation tasks to a Redis queue instead of directly spawning them')
@@ -17,9 +21,11 @@ const upload = multer({ dest: path.join(__dirname, './uploaded_aois') })
 app.use(morgan('combined'));
 
 // Handle AOI uploads
-app.post('/aois', upload.single('file'), processAoi({
+app.post('/aois', upload.single('file'), processAoi.runner({
   useQueue: argv.useQueue
-}));
+}))
+
+app.get('/build/status', processAoi.getStatus())
 
 const port = process.env.PORT || 3736;
 app.listen(port, function (err) {

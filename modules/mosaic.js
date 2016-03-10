@@ -10,28 +10,28 @@ class Mosaic {
     this.label = label;
     this.url = url;
   }
-  
+
   /**
    * Fetches quads from this mosaic intersecting with an AOI
-   * @param  {AOI}      aoi 
-   * @param  {Function} callback 
+   * @param  {AOI}      aoi
+   * @param  {Function} callback
    */
   fetchQuadsForAOI(aoi, callback){
     PlanetAPI.fetchQuadsFromAOI(aoi.bounds, this.url, this.label, (err, quads) => {
       if (err) throw err;
-      
+
       quads = quads.features.map(quad => {
         return new Quad(this, quad)
       })
-      
+
       callback(null, quads);
     });
   }
-  
+
   /**
    * Fetches quad image files from this mosaic intersecting with an AOI
-   * @param  {AOI}      aoi 
-   * @param  {Function} callback 
+   * @param  {AOI}      aoi
+   * @param  {Function} callback
    */
   fetchFilesForAOI(aoi, callback) {
     this.fetchQuadsForAOI(aoi, (err, quads) => {
@@ -43,11 +43,11 @@ class Mosaic {
       });
     });
   }
-  
+
   /**
    * Creates tiles for an AOI (fetching files if not already done)
-   * @param  {AOI}      aoi 
-   * @param  {Function} callback 
+   * @param  {AOI}      aoi
+   * @param  {Function} callback
    */
   createTilesForAOI(aoi, callback) {
     if (this.files) {
@@ -61,7 +61,7 @@ class Mosaic {
       });
     }
   }
-  
+
   /**
    * Creates tiles from the currently available imagery
    * @param  {Function}  callback
@@ -77,7 +77,7 @@ class Mosaic {
       for (var tiles of tilesByQuad) {
         mosaicTiles = mosaicTiles.concat(tiles);
       }
-      this.tiles = mosaicTiles;
+      this.tiles = mosaicTiles.sort();
       callback(err, mosaicTiles);
     });
   }

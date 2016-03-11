@@ -7,6 +7,7 @@ const config = require('./config.json')
 
 exports.runner = function (io, options){
   return function (req, res, next) {
+
     var project_id = req.body.project_id
     var subject_set_id = req.body.subject_set_id
     res.header('Content-Type', 'text/plain')
@@ -21,7 +22,8 @@ exports.runner = function (io, options){
     } else {
       res.redirect(config.host + '/builds')
       // Start job, ensuring correct working directory
-      var script = 'generate-planet-labs-subjects'
+      // var script = 'generate-planet-labs-subjects'
+      var script = 'build-status-test' // test script for build-status
       var aoi_file = req.file.path
       var job = fork(script, [project_id, subject_set_id, aoi_file])
 

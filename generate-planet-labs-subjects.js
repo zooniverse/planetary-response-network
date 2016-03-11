@@ -102,6 +102,7 @@ function uploadImages(rows, callback){
 }
 
 function generateSubjects(rows, callback){
+  process.send({status: 'generating_subjects'})
   async.mapSeries(rows, createSubjectFromManifestRow, function(error,subjects){
     if(error){
       callback(error)

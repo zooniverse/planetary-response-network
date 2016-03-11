@@ -5,8 +5,6 @@ const queue = require('../lib/queue')
 const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
 const config = require('./config.json')
 
-console.log('CONFIG: ', config.host);
-
 var status = {} // this won't work for queued stuff
 
 // module.exports = function (options) {

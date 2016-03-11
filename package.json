@@ -29,6 +29,7 @@
     "request": "~2.67.0",
     "rsmq": "^0.4.0",
     "rsmq-worker": "^0.3.8",
+    "socket.io": "^1.4.5",
     "togeojson": "^0.13.0",
     "xmlhttprequest-cookie": "^0.9.4",
     "yargs": "^3.31.0"

@@ -3,6 +3,9 @@ const fork = require('child_process').fork
 const path = require('path')
 const queue = require('../lib/queue')
 const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
+const config = require('./config.json')
+
+console.log('CONFIG: ', config.host);
 
 var status = {} // this won't work for queued stuff
 
@@ -21,7 +24,7 @@ exports.runner = function (options){
       // res.redirect('https://localhost:3443/builds')
 
     } else {
-      res.redirect('https://localhost:3443/builds')
+      res.redirect(config.host + '/builds')
       // Start job, ensuring correct working directory
       var script = 'generate-planet-labs-subjects'
       var aoi_file = req.file.path

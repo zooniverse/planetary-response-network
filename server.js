@@ -14,7 +14,7 @@ const argv = yargs
 
 const app = express()
 const server = require('http').createServer(app)
-const io = require('socket.io')(server)
+const io = require('socket.io').listen(server)
 
 io.sockets.on('connection', function(socket){
   console.log('Socket connected: %s', socket.id )
@@ -25,11 +25,7 @@ const upload = multer({ dest: path.join(__dirname, './uploaded_aois') })
 app.use(morgan('combined'))
 
 // Handle AOI uploads
-app.post('/aois', upload.single('file'), processAoi.runner({
-  useQueue: argv.useQueue
-}))
-
-app.get('/build/status', processAoi.getStatus())
+app.post('/aois', upload.single('file'), processAoi.runner(io, {useQueue: argv.useQueue} ))
 
 const port = process.env.PORT || 3736
 server.listen(port, function(error){

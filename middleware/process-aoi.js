@@ -5,10 +5,7 @@ const queue = require('../lib/queue')
 const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
 const config = require('./config.json')
 
-var status = {} // this won't work for queued stuff
-
-// module.exports = function (options) {
-exports.runner = function (options){
+exports.runner = function (io, options){
   return function (req, res, next) {
     var project_id = req.body.project_id
     var subject_set_id = req.body.subject_set_id
@@ -28,17 +25,9 @@ exports.runner = function (options){
       var aoi_file = req.file.path
       var job = fork(script, [project_id, subject_set_id, aoi_file])
 
-      job.on('message', (message) => {
-        console.log('PROCESS-AOI RECEIVED MESSAGE: ', message)
-        status = message
+      job.on('message', (status) => {
+        io.emit('build status', {status: status})
       })
     }
-  }
-}
-
-exports.getStatus = function (options) {
-  return function (req, res, next) {
-    console.log('STATUS IS: ', status);
-    res.send(status)
   }
 }

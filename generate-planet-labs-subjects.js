@@ -49,16 +49,13 @@ var tasks = {
 }
 
 function updateStatus(task, status){
-  // console.log('[[[ Task \'%s\' status updated to \'%s\' ]]]', task, status);
+  console.log('>>> Task \'%s\' status updated to \'%s\' <<<', task, status);
   if(!argv.cliOnly) {
     tasks[task].status = status
     process.send(tasks)
   }
 }
 
-console.log('Fetching Mosaics...');
-
-// process.send({status: tasks})
 updateStatus('fetching_mosaics', 'in-progress')
 
 /* Call Planet API and download GeoTIF and accompanying JSON files */
@@ -78,8 +75,7 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
           task_list.push( async.apply( tilizeImage, image_file, 480, 160 ) )
         }
       }
-      console.log('Tilizing images...')
-      // process.send({status: 'tilizing_mosaics'})
+
       updateStatus('tilizing_mosaics', 'in-progress')
       var start_time = Date.now()
 
@@ -90,14 +86,7 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
           updateStatus('tilizing_mosaics', 'done')
           var elapsed_time = parseFloat( (Date.now()-start_time) / 60 / 1000).toFixed(2)
           console.log('Tilizing complete (' + elapsed_time + ' minutes)');
-          console.log('Generating manifest file...');
-          // process.send({status: 'generating_manifest'})
-          updateStatus('generating_manifest', 'in-progress')
-          generateManifest( manifest_file, function(error){
-            if(error) {
-              updateStatus('generating_manifest', 'error')
-            }
-            updateStatus('generating_manifest', 'done')
+          generateManifest( manifest_file, function(){
             deployPanoptesSubjects(manifest_file, project_id, subject_set_id, function(){
               // console.log('Finished uploading subjects.');
             })
@@ -109,15 +98,11 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
 )
 
 function deployPanoptesSubjects(manifest_file, project_id, subject_set_id, callback){
-  console.log('Uploading images...');
-  // process.send({status: 'uploading_images'})
-  updateStatus('uploading_images', 'in-progress')
 
   // maybe clean up using async.waterfall?
   fs.readFile(manifest_file, function(error,data){
     parseCsv(data, {columns: true}, function(error,rows){
       uploadImages(rows, function(error,rows){
-        updateStatus('uploading_images', 'done')
         generateSubjects(rows, function(error,subjects){
           updateStatus('deploying_subjects', 'in-progress')
           panoptesAPI.saveSubjects(subjects, function(error,result){
@@ -137,17 +122,19 @@ function deployPanoptesSubjects(manifest_file, project_id, subject_set_id, callb
 }
 
 function uploadImages(rows, callback){
+  updateStatus('uploading_images', 'in-progress')
   async.mapSeries(rows, uploadSubjectImagesToS3, function(error,rows){
     if(error){
+      updateStatus('uploading_images', 'error')
       callback(error)
     } else{
+      updateStatus('uploading_images', 'done')
       callback(null,rows)
     }
   })
 }
 
 function generateSubjects(rows, callback){
-  // process.send({status: 'generating_subjects'})
   async.mapSeries(rows, createSubjectFromManifestRow, function(error,subjects){
     if(error){
       callback(error)
@@ -188,6 +175,7 @@ function createSubjectFromManifestRow(row, callback){
 }
 
 function generateManifest(manifest_file, callback){
+  updateStatus('generating_manifest', 'in-progress')
   // create csv header
   var csv_header = [ 'image1', 'image2', 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ]
 
@@ -197,7 +185,7 @@ function generateManifest(manifest_file, callback){
       csv_rows.splice(0, 0, csv_header);
       csvStringify(csv_rows, function(error, output){
         fs.writeFile(manifest_file, output, function(){
-          console.log('Finished writing manifest.')
+          updateStatus('generating_manifest', 'done')
           callback(null, manifest_file)
         });
       });

@@ -22,13 +22,13 @@ exports.runner = function (io, options){
     } else {
       res.redirect(config.host + '/builds')
       // Start job, ensuring correct working directory
-      // var script = 'generate-planet-labs-subjects'
-      var script = 'build-status-test' // test script for build-status
+      var script = 'generate-planet-labs-subjects'
+      // var script = 'build-status-test' // test script for build-status
       var aoi_file = req.file.path
       var job = fork(script, [project_id, subject_set_id, aoi_file])
 
-      job.on('message', (status) => {
-        io.emit('build status', {status: status})
+      job.on('message', (message) => {
+        io.emit('build status', message)
       })
     }
   }

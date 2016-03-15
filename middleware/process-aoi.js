@@ -11,15 +11,27 @@ exports.runner = function (io, options){
     var project_id = req.body.project_id
     var subject_set_id = req.body.subject_set_id
     res.header('Content-Type', 'text/plain')
-    if (options.useQueue) {
-      // Send job to queue
-      queue.push(path.join(UPLOAD_PATH, req.file.filename))
 
+    if (options.useQueue) {
+      console.log('Sending job to queue...');
+      console.log('UPLOAD_PATH = ', UPLOAD_PATH);
+      console.log('req.file.filename = ', req.file.filename);
+      // Send job to queue
+      var payload = {
+        aoi_file: path.join(UPLOAD_PATH, req.file.filename),
+        project_id: project_id,
+        subject_set_id: subject_set_id
+      }
+
+      console.log('BEFORE PAYLOAD: ', payload);
+      // queue.push( path.join(UPLOAD_PATH, req.file.filename) )
+      queue.push( payload )
       // Send confirmation
-      res.send('Upload complete, subject fetch job queued')
-      // res.redirect('https://localhost:3443/builds')
+      // res.send('Upload complete, subject fetch job queued')
+      res.redirect(config.host + '/builds')
 
     } else {
+      console.log('Running job locally without queue...');
       res.redirect(config.host + '/builds')
       // Start job, ensuring correct working directory
       var script = 'generate-planet-labs-subjects'

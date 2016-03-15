@@ -4,7 +4,9 @@ const fork             = require('child_process').fork
 const RSMQWorker       = require('rsmq-worker')
 
 const LOG_TAG = 'prn_factory'
-const GENERATOR_SCRIPT = path.join(__dirname, '../planet-api-before-after-test.js')
+// const GENERATOR_SCRIPT = path.join(__dirname, '../planet-api-before-after-test.js')
+const GENERATOR_SCRIPT = path.join(__dirname, '../generate-planet-labs-subjects.js')
+
 const QUEUE_NAME = 'zooniverse_prn'
 
 // Scoped logging
@@ -23,11 +25,13 @@ const worker = new RSMQWorker(QUEUE_NAME, {
 })
 
 // Listen for jobs
-worker.on( "message", function(filename, next) {
-  log('received message', filename, 'spawning', GENERATOR_SCRIPT)
-  const job = fork(GENERATOR_SCRIPT, [filename])
+worker.on( "message", function(payload, next) {
+  payload = JSON.parse(payload)
+  log('PAYLOAD: ', payload.project_id, ' <<< PROJECT ID');
+  log('received message', payload, 'spawning', GENERATOR_SCRIPT)
+  const job = fork(GENERATOR_SCRIPT, [payload.project_id, payload.subject_set_id, payload.aoi_file])
   job.on('close', function (code) {
-    log('Job for', filename, 'finished with code', code)
+    log('Job for', payload, 'finished with code', code)
     next()
   })
 })

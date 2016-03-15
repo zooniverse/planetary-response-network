@@ -146,6 +146,12 @@ function generateSubjects(rows, callback){
 
 // Note: assumes there are two valid images in each row
 function uploadSubjectImagesToS3(row, callback){
+
+  // // DEBUG
+  // setTimeout( function(){
+  //   callback(null, row)
+  // }, 10000)
+
   async.series([
     async.apply( uploadToS3, row['image1'], row['image1'], bucket ),
     async.apply( uploadToS3, row['image2'], row['image2'], bucket )

@@ -1,11 +1,12 @@
 'use strict'
-const fork = require('child_process').fork
-const path = require('path')
-const queue = require('../lib/queue')
-const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
+const fork   = require('child_process').fork
+const path   = require('path')
+const queue  = require('../lib/queue')
 const config = require('./config.json')
 
-exports.runner = function (io, options){
+const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
+
+exports.runner = function (options){
   return function (req, res, next) {
 
     var project_id = req.body.project_id
@@ -14,7 +15,6 @@ exports.runner = function (io, options){
 
     if (options.useQueue) {
       console.log('Sending job to queue...');
-      console.log('UPLOAD_PATH = ', UPLOAD_PATH);
       console.log('req.file.filename = ', req.file.filename);
       // Send job to queue
       var payload = {
@@ -23,7 +23,6 @@ exports.runner = function (io, options){
         subject_set_id: subject_set_id
       }
 
-      console.log('BEFORE PAYLOAD: ', payload);
       // queue.push( path.join(UPLOAD_PATH, req.file.filename) )
       queue.push( payload )
       // Send confirmation
@@ -39,9 +38,6 @@ exports.runner = function (io, options){
       var aoi_file = req.file.path
       var job = fork(script, [project_id, subject_set_id, aoi_file])
 
-      job.on('message', (message) => {
-        io.emit('build status', message)
-      })
     }
   }
 }

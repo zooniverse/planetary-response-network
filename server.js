@@ -14,18 +14,30 @@ const argv = yargs
 
 const app = express()
 const server = require('http').createServer(app)
-const io = require('socket.io').listen(server)
 
+const io = require('socket.io').listen(server)
 io.sockets.on('connection', function(socket){
   console.log('Socket connected: %s', socket.id )
 })
+
+var Redis = require('ioredis');
+var redis = new Redis();
+
+redis.subscribe('build status', function(error, count){
+
+})
+
+redis.on('message', function (channel, message) {
+  // console.log('Receive message \'%s\' from channel \'%s\'', message, channel);
+  io.emit('build status', message) // emit message to socket.io clients
+});
 
 const upload = multer({ dest: path.join(__dirname, './uploaded_aois') })
 
 app.use(morgan('combined'))
 
 // Handle AOI uploads
-app.post('/aois', upload.single('file'), processAoi.runner(io, {useQueue: argv.useQueue} ))
+app.post('/aois', upload.single('file'), processAoi.runner({useQueue: argv.useQueue} ))
 
 const port = process.env.PORT || 3736
 server.listen(port, function(error){

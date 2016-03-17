@@ -11,6 +11,9 @@ var uploadToS3   = require('./modules/upload-to-s3.js')
 var panoptesAPI  = require('./modules/panoptes-api.js')
 var parseCsv     = require('csv-parse')
 var yargs        = require('yargs')
+var Redis        = require('ioredis');
+
+var pub = new Redis({host: 'localhost', port: 6379});
 
 // Parse options
 var argv = yargs
@@ -18,13 +21,17 @@ var argv = yargs
   .argv
 
  /* Selected mosaic */
-var before_url = 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/'
-var after_url  = 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/'
+// var before_url = 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/'
+// var after_url  = 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/'
+
+var before_url = 'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/'
+var after_url  = 'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/'
+
 
 /* Read area of interest */
 var project_id = process.argv[2]
 var subject_set_id = process.argv[3]
-var kml_file = process.argv[4] || 'data/central-kathmandu.kml'
+var kml_file = process.argv[4] || 'data/k-town.kml' //'data/central-kathmandu.kml'
 
 console.log('Using { project_id: ' + project_id + ', subject_set_id: ' + subject_set_id + '}')
 console.log('Opening AOI file ', kml_file)
@@ -36,7 +43,6 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 /* Set parameters */
 var manifest_file = 'data/manifest.csv'
 var bucket = 'planetary-response-network'
-
 
 // status should be one of three values: null, in-progress, done, error
 var tasks = {
@@ -50,9 +56,10 @@ var tasks = {
 
 function updateStatus(task, status){
   console.log('>>> Task \'%s\' status updated to \'%s\' <<<', task, status);
+
   if(!argv.cliOnly) {
     tasks[task].status = status
-    process.send(tasks)
+    pub.publish('build status', JSON.stringify(tasks));
   }
 }
 

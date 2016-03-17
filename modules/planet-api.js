@@ -52,6 +52,7 @@ function fetchMosaicFromAOI (bounds, url, label, callback){
     if(error) {
       callback(error)
     } else{
+        // TO DO: should check if body.message is returned (usually when API key fails)
         var data = JSON.parse(body)
         console.log('Found ' + data.features.length + ' mosaics.');
         processFeatures(data.features, label,

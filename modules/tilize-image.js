@@ -2,9 +2,9 @@ var os             = require('os')
 var fs             = require('fs')
 var im             = require('imagemagick')
 var path           = require('path')
+var gdal           = require('gdal')
 var async          = require('async')
 var imgMeta        = require('./image-meta')
-var pxToGeo        = require('./px-to-geo')
 var geoCoords      = require('./geo-coords')
 
 /**
@@ -22,9 +22,9 @@ module.exports = function (filename, tileSize, overlap, callback){
 
   var basename = path.basename(filename).split('.')[0]
   var dirname  = path.dirname(filename)
-  var metadata = geoCoords.getMetadata(filename)
+  var ds = gdal.open(filename)
+  var metadata = geoCoords.getMetadata(ds)
   var size = metadata.size
-  var reference_coordinates = metadata.reference_coordinates
 
   // Tile creator
   var create_tile_task = function (task, done) {
@@ -40,11 +40,11 @@ module.exports = function (filename, tileSize, overlap, callback){
 
     /* Convert corner and center pixel coordinates to geo */
     var coords = {
-      upper_left   : pxToGeo( offset_x,                offset_y,                size.x, size.y, reference_coordinates),
-      upper_right  : pxToGeo( offset_x + tile_wid,     offset_y,                size.x, size.y, reference_coordinates),
-      bottom_right : pxToGeo( offset_x + tile_wid,     offset_y + tile_hei,     size.x, size.y, reference_coordinates),
-      bottom_left  : pxToGeo( offset_x,                offset_y + tile_hei,     size.x, size.y, reference_coordinates),
-      center       : pxToGeo( offset_x + tile_wid / 2, offset_y + tile_hei / 2, size.x, size.y, reference_coordinates) // NOT (lower_right.lat - upper_left.lat, lower_right.lon - upper_left.lon) because meridians and parallels
+      upper_left   : geoCoords.pxToWgs84(ds, offset_x,                offset_y),
+      upper_right  : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y),
+      bottom_right : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y + tile_hei),
+      bottom_left  : geoCoords.pxToWgs84(ds, offset_x,                offset_y + tile_hei),
+      center       : geoCoords.pxToWgs84(ds, offset_x + tile_wid / 2, offset_y + tile_hei / 2)
     }
 
     // console.log('creating tile...', task) // DEBUG CODE

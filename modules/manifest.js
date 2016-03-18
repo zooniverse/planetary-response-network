@@ -5,19 +5,23 @@ const csvStringify = require('csv-stringify');
 const imgMeta = require('./image-meta');
 
 class Manifest {
-  
+
   /**
-   * @param  {Array<Array<String>>}  filesByMosaic  List of mosaic file lists 
+   * @param  {Array<Mosaic>}         mosaics        List of mosaics included in the manifest
+   * @param  {Array<Array<String>>}  filesByMosaic  List of mosaic file lists
    */
-  constructor(filesByMosaic) {
+  constructor(mosaics, projectId, subjectSetId, filesByMosaic) {
+    this.mosaics = mosaics;
     this.filesByMosaic = filesByMosaic;
+    this.projectId = projectId;
+    this.subjectSetId = subjectSetId;
   }
-  
+
   /**
-   * Creates sets of files, one each from each mosaic's files per set. This assumes that the tiles in each mosaic are in order and of the same geographic region
+   * Generates the manifest rows, each with one image from each mosaic. This assumes that the tiles in each mosaic are in order and of the same geographic region
    * @param  {Function}  callback
    */
-  createFileTuples(callback) {
+  getSubjects(callback) {
     var tasks = [];
     var fileTuples = [];
     var i = 0;
@@ -27,67 +31,37 @@ class Manifest {
         tuple.push(mosaicFiles[i]);
       }
       fileTuples.push(tuple);
-      tasks.push(async.apply(this.generateRow.bind(this), tuple));
+      tasks.push(async.apply(this.getSubject.bind(this), tuple));
       i++;
     }
-    async.series(tasks, callback);
-  }
-  
-  /**
-   * Generates the manifest content
-   * @param  {Function}  callback
-   */
-  generate(callback) {
-    // Pair up files across mosaics
-    this.createFileTuples((err, rows) => {
-      var header = [];
-      for (var i = 0; i < this.filesByMosaic.length; i++) {
-        header.push('image'+ (i + 1))
-      }
-      header = header.concat([
-        'upper_left_lon',
-        'upper_left_lat',
-        'upper_right_lon',
-        'upper_right_lat',
-        'bottom_right_lon',
-        'bottom_right_lat',
-        'bottom_left_lon',
-        'bottom_left_lat',
-        'center_lon',
-        'center_lat'
-      ]);
-      rows.splice(0, 0, header);
-      csvStringify(rows, callback);
+    async.series(tasks, (err, subjects) => {
+      callback(err, subjects);
     });
   }
 
   /**
-   * Generates a manifest row from a set of files
+   * Generates a subject from a set of files
    * @param  {Array<String>}  fileSet
-   * @param  {Function}       callback 
+   * @param  {Function}       callback
    */
-  generateRow(fileSet, callback) {
-    imgMeta.read(fileSet[0], ['-userComment'], function (err, metadata) {
+  getSubject(fileSet, callback) {
+    imgMeta.read(fileSet[0], ['-userComment'], (err, metadata) => {
       if (err) return callback(err);
 
       try {
-        var coords = JSON.parse(decodeURIComponent(metadata["userComment"]));
-
-        var row = fileSet.concat([
-          coords.upper_left.lon,
-          coords.upper_left.lat,
-          coords.upper_right.lon,
-          coords.upper_right.lat,
-          coords.bottom_right.lon,
-          coords.bottom_right.lat,
-          coords.bottom_left.lon,
-          coords.bottom_left.lat,
-          coords.center.lon,
-          coords.center.lat
-        ]);
-        callback(null, row)
+        var subject = {
+          metadata: JSON.parse(decodeURIComponent(metadata["userComment"]))
+        };
+        subject.locations = this.mosaics.map((mosaic, i) => {
+          return { 'image/jpeg': fileSet[i] }
+        });
+        subject.links = {
+          project: this.projectId,
+          subject_sets: [this.subjectSetId]
+        };
+        callback(null, subject);
       } catch (e) {
-        callback(e)
+        callback(e);
       }
     })
   }

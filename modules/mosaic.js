@@ -37,48 +37,32 @@ class Mosaic {
     this.fetchQuadsForAOI(aoi, (err, quads) => {
       async.map(quads, (quad, callback) => {
         quad.download(callback);
-      }, (err, files) => {
-        this.files = files;
-        callback(null, files);
-      });
+      }, callback);
     });
   }
 
   /**
-   * Creates tiles for an AOI (fetching files if not already done)
+   * Creates tiles for an AOI
    * @param  {AOI}      aoi
    * @param  {Function} callback
    */
   createTilesForAOI(aoi, callback) {
-    if (this.files) {
-      // Already got files, start tiling
-      async.nextTick(this.createTiles.bind(this, callback));
-    } else {
-      // No files yet, fetch them first
-      this.fetchFilesForAOI(aoi, (err, files) => {
-        if (err) return callback(err);
-        this.createTiles(callback);
-      });
-    }
-  }
+    // Fetch files
+    this.fetchFilesForAOI(aoi, (err, files) => {
+      if (err) return callback(err);
 
-  /**
-   * Creates tiles from the currently available imagery
-   * @param  {Function}  callback
-   * @private
-   */
-  createTiles(callback) {
-    var tasks = [];
-    for (var file of this.files) {
-      tasks.push(async.apply(tilizeImage, file, 480, 160));
-    }
-    async.series(tasks, (err, tilesByQuad) => {
-      var mosaicTiles = [];
-      for (var tiles of tilesByQuad) {
-        mosaicTiles = mosaicTiles.concat(tiles);
+      // Tile em up
+      var tasks = [];
+      for (var file of files) {
+        tasks.push(async.apply(tilizeImage, file, 480, 160));
       }
-      this.tiles = mosaicTiles.sort();
-      callback(err, mosaicTiles);
+      async.series(tasks, (err, tilesByQuad) => {
+        var mosaicTiles = [];
+        for (var tiles of tilesByQuad) {
+          mosaicTiles = mosaicTiles.concat(tiles);
+        }
+        callback(err, mosaicTiles.sort());
+      });
     });
   }
 }

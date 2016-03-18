@@ -52,7 +52,7 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
         regions = result[i];
         for(var j=0; j<regions.length; j++){
           image_file = regions[j]
-          task_list.push( async.apply( tilizeImage, image_file, 480, 160 ) )
+          task_list.push( async.apply( tilizeImage.tilize, image_file, 480, 160 ) )
         }
       }
       console.log('Tilizing images...');

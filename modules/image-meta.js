@@ -29,7 +29,7 @@ function readImgMeta (filename, tags, callback) {
       response = response.split("\n");
 
       //For each line of the response extract the meta data into a nice associative array
-      var metaData = [];
+      var metaData = {};
       response.forEach(function (responseLine) {
         var pieces = responseLine.split(": ");
         //Is this a line with a meta data pair on it?

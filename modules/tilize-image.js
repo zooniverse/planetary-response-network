@@ -47,8 +47,10 @@ function tilizeImage (filename, tileSize, overlap, callback){
       center       : geoCoords.pxToWgs84(ds, offset_x + tile_wid / 2, offset_y + tile_hei / 2)
     }
 
-    // console.log('creating tile...', task) // DEBUG CODE
-    im.convert([ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
+    // Should we -normalize each tile?
+    // PRO: Ensures contrast is stretched if images are too dark or washed out
+    // CON: May take longer to process?
+    im.convert([ filename + '[0]', '-crop', crop_option, '-background', 'black', '-normalize', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
       if (err) return done(err)
       imgMeta.write(outfilename, '-userComment', coords, done)  // write coordinates to tile image metadata
     })

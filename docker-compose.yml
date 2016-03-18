@@ -18,5 +18,6 @@ services:
       - "PLANET_API_KEY"
       - "AMAZON_ACCESS_KEY_ID"
       - "AMAZON_SECRET_ACCESS_KEY"
+      - "AMAZON_S3_BUCKET"
       - "ZOONIVERSE_USERNAME"
       - "ZOONIVERSE_PASSWORD"

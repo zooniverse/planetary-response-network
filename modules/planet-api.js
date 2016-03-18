@@ -37,6 +37,7 @@ function fetchMosaicFromAOI (bounds, url, label, callback){
       callback(error)
     } else{
         var data = body
+        // Should check if body.message exists (silently fails if PlanetLabs API key is invalid)
         console.log('Found ' + data.features.length + ' mosaics.');
         processFeatures(data.features, label,
           function(result){

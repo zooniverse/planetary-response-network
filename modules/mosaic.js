@@ -54,7 +54,7 @@ class Mosaic {
       // Tile em up
       var tasks = [];
       for (var file of files) {
-        tasks.push(async.apply(tilizeImage, file, 480, 160));
+        tasks.push(async.apply(tilizeImage.tilize, file, 480, 160));
       }
       async.series(tasks, (err, tilesByQuad) => {
         var mosaicTiles = [];

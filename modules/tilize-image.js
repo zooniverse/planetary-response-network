@@ -14,7 +14,7 @@ var geoCoords      = require('./geo-coords')
  * @param  {Number}   overlap  Amount by which to overlap tiles in x and y (in pixels)
  * @param  {Function} callback
  */
-module.exports = function (filename, tileSize, overlap, callback){
+function tilizeImage (filename, tileSize, overlap, callback){
   var tile_wid = tileSize;
   var tile_hei = tileSize;
   var step_x = 4 * tile_wid - overlap;
@@ -79,3 +79,8 @@ module.exports = function (filename, tileSize, overlap, callback){
     }
   } // end outer for loop
 }
+
+
+module.exports = {
+  tilize: tilizeImage
+};

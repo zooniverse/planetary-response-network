@@ -12,8 +12,10 @@ var panoptesAPI  = require('./modules/panoptes-api.js')
 var parseCsv     = require('csv-parse')
 var yargs        = require('yargs')
 var Redis        = require('ioredis');
+var config       = require('./lib/config.json')
 
-var pub = new Redis({host: 'localhost', port: 6379});
+console.log('USING REDIS CONFIGURATION:', config.redis_server);
+var pub = new Redis({host: config.redis_server.host, port: config.redis_server.port});
 
 // Parse options
 var argv = yargs
@@ -26,7 +28,6 @@ var argv = yargs
 
 var before_url = 'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/'
 var after_url  = 'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/'
-
 
 /* Read area of interest */
 var project_id = process.argv[2]
@@ -55,12 +56,9 @@ var tasks = {
 }
 
 function updateStatus(task, status){
-  console.log('>>> Task \'%s\' status updated to \'%s\' <<<', task, status);
-
-  if(!argv.cliOnly) {
-    tasks[task].status = status
-    pub.publish('build status', JSON.stringify(tasks));
-  }
+  console.log('[BUILD STATUS] Task \'%s\' status updated to \'%s\'', task, status);
+  tasks[task].status = status
+  pub.publish('build status', JSON.stringify(tasks));
 }
 
 updateStatus('fetching_mosaics', 'in-progress')

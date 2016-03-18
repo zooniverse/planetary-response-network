@@ -1,0 +1,7 @@
+{
+  "host": "https://localhost:3443",
+  "redis_server": {
+    "host": "localhost",
+    "port": 6379
+  }
+}

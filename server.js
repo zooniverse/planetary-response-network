@@ -5,6 +5,7 @@ const multer     = require('multer')
 const yargs      = require('yargs')
 const path       = require('path')
 const http       = require('http')
+const config     = require('./lib/config.json')
 
 // Parse options
 const argv = yargs
@@ -21,7 +22,7 @@ io.sockets.on('connection', function(socket){
 })
 
 var Redis = require('ioredis');
-var redis = new Redis();
+var redis = new Redis({host: config.redis_server.host, port: config.redis_server.port});
 
 redis.subscribe('build status', function(error, count){
 

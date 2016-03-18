@@ -16,6 +16,8 @@ function log () {
   console.log.apply(this, msgs)
 }
 
+console.log('CONSUMER USING REDIS HOST: ', process.env.REDIS_HOST || 'redis');
+
 // Create worker
 const worker = new RSMQWorker(QUEUE_NAME, {
   maxReceiveCount: 1,
@@ -27,8 +29,6 @@ const worker = new RSMQWorker(QUEUE_NAME, {
 // Listen for jobs
 worker.on( "message", function(payload, next) {
   payload = JSON.parse(payload)
-  log('PAYLOAD: ', payload.project_id, ' <<< PROJECT ID');
-  log('received message', payload, 'spawning', GENERATOR_SCRIPT)
   const job = fork(GENERATOR_SCRIPT, [payload.project_id, payload.subject_set_id, payload.aoi_file])
   job.on('close', function (code) {
     log('Job for', payload, 'finished with code', code)

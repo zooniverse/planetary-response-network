@@ -2,7 +2,7 @@
 const fork   = require('child_process').fork
 const path   = require('path')
 const queue  = require('../lib/queue')
-const config = require('./config.json')
+const config = require('../lib/config.json')
 
 const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
 
@@ -23,18 +23,13 @@ exports.runner = function (options){
         subject_set_id: subject_set_id
       }
 
-      // queue.push( path.join(UPLOAD_PATH, req.file.filename) )
       queue.push( payload )
-      // Send confirmation
-      // res.send('Upload complete, subject fetch job queued')
       res.redirect(config.host + '/builds')
 
     } else {
       console.log('Running job locally without queue...');
       res.redirect(config.host + '/builds')
-      // Start job, ensuring correct working directory
       var script = 'generate-planet-labs-subjects'
-      // var script = 'build-status-test' // test script for build-status
       var aoi_file = req.file.path
       var job = fork(script, [project_id, subject_set_id, aoi_file])
 

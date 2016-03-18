@@ -29,7 +29,7 @@ const manifestFile = 'data/'+new Date().getTime()+'.csv';
 
 // Create mosaic instances from provided URLs
 const mosaics = argv.mosaics.map((mosaic, i) => {
-  return new Mosaic('image' + (i + 1), mosaic);
+  return new Mosaic(argv.provider, 'image' + (i + 1), mosaic);
 });
 
 // Create and upload subjects

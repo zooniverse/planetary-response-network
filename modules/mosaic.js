@@ -6,7 +6,8 @@ const tilizeImage = require('./tilize-image');
 
 class Mosaic {
 
-  constructor(label, url) {
+  constructor(provider, label, url) {
+    this.provider = provider;
     this.label = label;
     this.url = url;
   }

@@ -20,7 +20,7 @@ class Quad {
    */
   ensureDownloadDir(callback) {
     var dir ='data/' + encodeURIComponent(this.feature.properties.links.mosaic);
-    mkdirp(dir, err => {       
+    mkdirp(dir, err => {
        callback(err, dir);
     });
   }
@@ -33,6 +33,8 @@ class Quad {
     // Ensure download dir
     this.ensureDownloadDir((err, dir) => {
       if (err) throw err;
+
+      // TODO use this.mosaic.provider to determine download link and method
 
       var url = this.feature.properties.links.full;
       var basename  = url.split('/')[7]

@@ -1,7 +1,11 @@
+var Redis = require('ioredis');
+var redis = new Redis();
+var pub = new Redis();
 async = require('async')
+
 const delay = 5000
 
-// status should be one of three values: null, in-progress, done, error
+// status should be one of four values: null, 'in-progress', 'done', or 'error'
 var tasks = {
     fetching_mosaics:    {status: null, label: 'Fetching mosaics'},
     tilizing_mosaics:    {status: null, label: 'Tilizing mosaic images'},
@@ -12,55 +16,55 @@ var tasks = {
 }
 
 function updateStatus(task, status){
-  console.log('STATUS = ', status);
-  console.log('updateStatus(): tasks = ', tasks['fetching_mosaics'].status);
+  console.log('[BUILD STATUS] Task \'%s\' status updated to \'%s\'', task, status);
   tasks[task].status = status
-  process.send(tasks)
+  pub.publish('build status', JSON.stringify(tasks));
 }
 
-console.log('Fetching Mosaics...');
-
-// process.send({status: tasks})
-// DEBUG CODE
 async.forever(
   function(next){
     async.series([
         function(callback){
+            // (re-)initialize task statuses
+            for(var task of Object.keys(tasks)){
+              tasks[task].status = null
+            }
             setTimeout( function(){
               updateStatus('fetching_mosaics', 'in-progress')
               callback(null, 'one')
             }, delay)
-        },
+        }.bind(this),
         function(callback){
-            updateStatus('fetching_mosaics', 'done')
             setTimeout( function(){
+              updateStatus('fetching_mosaics', 'done')
               updateStatus('tilizing_mosaics', 'in-progress')
               callback(null, 'one')
             }, delay)
         },
         function(callback){
-            updateStatus('tilizing_mosaics', 'done')
             setTimeout( function(){
+              updateStatus('tilizing_mosaics', 'done')
               updateStatus('generating_manifest', 'in-progress')
               callback(null, 'one')
             }, delay)
         },
         function(callback){
-            updateStatus('generating_manifest', 'done')
             setTimeout( function(){
+              updateStatus('generating_manifest', 'done')
               updateStatus('uploading_images', 'in-progress')
               callback(null, 'one')
             }, delay)
         },
         function(callback){
-            updateStatus('uploading_images', 'done')
             setTimeout( function(){
+              updateStatus('uploading_images', 'done')
               updateStatus('deploying_subjects', 'in-progress')
               callback(null, 'one')
             }, delay)
         },
         function(callback){
             setTimeout(function(){
+              updateStatus('deploying_subjects', 'done')
               updateStatus('finished', 'in-progress')
               callback(null, 'two')
               next()

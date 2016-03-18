@@ -4,7 +4,8 @@ const morgan     = require('morgan')
 const multer     = require('multer')
 const yargs      = require('yargs')
 const path       = require('path')
-const http       = require('http')
+const fs         = require('fs')
+const https      = require('https')
 const config     = require('./lib/config.json')
 
 // Parse options
@@ -13,8 +14,16 @@ const argv = yargs
   .default('use-queue', true)
   .argv
 
+var key = fs.readFileSync('server.key')
+var cert = fs.readFileSync('server.crt')
+
+var credentials = {
+    key: key,
+    cert: cert
+};
+
 const app = express()
-const server = require('http').createServer(app)
+const server = require('https').createServer(credentials, app)
 
 const io = require('socket.io').listen(server)
 io.sockets.on('connection', function(socket){
@@ -24,9 +33,7 @@ io.sockets.on('connection', function(socket){
 var Redis = require('ioredis');
 var redis = new Redis({host: config.redis_server.host, port: config.redis_server.port});
 
-redis.subscribe('build status', function(error, count){
-
-})
+redis.subscribe('build status', function(error, count){})
 
 redis.on('message', function (channel, message) {
   // console.log('Receive message \'%s\' from channel \'%s\'', message, channel);

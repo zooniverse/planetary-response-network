@@ -23,11 +23,11 @@ var argv = yargs
   .argv
 
  /* Selected mosaic */
-// var before_url = 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/'
-// var after_url  = 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/'
+var before_url = 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/'
+var after_url  = 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/'
 
-var before_url = 'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/'
-var after_url  = 'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/'
+// var before_url = 'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/'
+// var after_url  = 'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/'
 
 /* Read area of interest */
 var project_id = process.argv[2]

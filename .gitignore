@@ -1,6 +1,6 @@
 node_modules
 npm-debug.log
-data/
+/data
 .DS_Store
 npm-debug.log
 supervisord.log

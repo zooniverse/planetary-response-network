@@ -5,7 +5,8 @@ const multer     = require('multer')
 const yargs      = require('yargs')
 const path       = require('path')
 const fs         = require('fs')
-const https      = require('https')
+const http       = require('http')
+// const https       = require('https')
 const config     = require('./lib/config.json')
 
 // Parse options
@@ -14,16 +15,18 @@ const argv = yargs
   .default('use-queue', true)
   .argv
 
-var key = fs.readFileSync('server.key')
-var cert = fs.readFileSync('server.crt')
-
-var credentials = {
-    key: key,
-    cert: cert
-};
+// https.globalAgent.options.rejectUnauthorized = false;
+//
+// var key = fs.readFileSync('server.key')
+// var cert = fs.readFileSync('server.crt')
+//
+// var credentials = {
+//     key: key,
+//     cert: cert
+// };
 
 const app = express()
-const server = require('https').createServer(credentials, app)
+const server = require('http').createServer(app)
 
 const io = require('socket.io').listen(server)
 io.sockets.on('connection', function(socket){

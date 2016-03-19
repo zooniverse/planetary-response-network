@@ -6,6 +6,7 @@ var async      = require('async')
 
 /* Handle module exports */
 exports.downloadFile                     = downloadFile
+exports.fetchQuadsFromAOI                = fetchQuadsFromAOI
 exports.fetchMosaicFromAOI               = fetchMosaicFromAOI
 exports.fetchBeforeAndAfterMosaicFromAOI = fetchBeforeAndAfterMosaicFromAOI
 
@@ -31,12 +32,26 @@ function fetchBeforeAndAfterMosaicFromAOI (before_url, after_url, bounds, callba
 /* Downloads a GeoTIF mosaic quad */
 function fetchMosaicFromAOI (bounds, url, label, callback){
 
-  console.log('Fetching \"' + label + '\" mosaics intersecting with AOI...');
-
-  var intersects = JSON.stringify({
-    "type": "Polygon",
-      "coordinates": [bounds]
+  fetchQuadsFromAOI(bounds, url, label, function (error, body) {
+    if(error) {
+      callback(error)
+    } else{
+        var data = body
+        // Should check if body.message exists (silently fails if PlanetLabs API key is invalid)
+        console.log('Found ' + data.features.length + ' mosaics.');
+        processFeatures(data.features, label,
+          function(result){
+            if(callback) callback(null, result)
+          }
+        ) // download images and data
+    }
   })
+}
+
+function fetchQuadsFromAOI (bounds, url, label, callback) {
+  console.log('Fetching \"' + label + '\" quads intersecting with AOI...');
+
+  var intersects = boundsToIntersects(bounds)
 
   var params = { intersects: intersects }
 
@@ -49,17 +64,14 @@ function fetchMosaicFromAOI (bounds, url, label, callback){
     },
   },
   function (error, response, body) {
-    if(error) {
-      callback(error)
-    } else{
-        var data = JSON.parse(body)
-        console.log('Found ' + data.features.length + ' mosaics.');
-        processFeatures(data.features, label,
-          function(result){
-            if(callback) callback(null, result)
-          }
-        ) // download images and data
-    }
+    callback(error, JSON.parse(body));
+  })
+}
+
+function boundsToIntersects(bounds) {
+  return JSON.stringify({
+    "type": "Polygon",
+    "coordinates": [bounds]
   })
 }
 

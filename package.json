@@ -11,11 +11,13 @@
     "producer": "node server.js",
     "consumer": "node generator/main.js",
     "start": "npm run producer & npm run consumer",
-    "keygen": "openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj '/C=GB/ST=/L=/O=Zooniverse/OU=/CN=localhost' && openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt && rm server.csr && echo 'Generated key server.key, certificate server.crt'"
+    "keygen": "openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj '/C=GB/ST=/L=/O=Zooniverse/OU=/CN=localhost' && openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt && rm server.csr && echo 'Generated key server.key, certificate server.crt'",
+    "test": "mocha"
   },
   "dependencies": {
     "async": "~1.5.2",
     "aws-sdk": "^2.2.32",
+    "chai": "^3.5.0",
     "csv-parse": "^1.0.1",
     "csv-stringify": "0.0.8",
     "express": "^4.13.4",
@@ -25,6 +27,8 @@
     "ioredis": "^1.15.1",
     "jsdom": "^7.2.2",
     "json-format": "~0.1.1",
+    "mkdirp": "^0.5.1",
+    "mocha": "^2.4.5",
     "morgan": "^1.7.0",
     "multer": "^1.1.0",
     "panoptes-client": "^2.0.1",
@@ -37,6 +41,7 @@
     "yargs": "^3.31.0"
   },
   "devDependencies": {
-    "nodemon": "^1.9.0"
+    "nodemon": "^1.9.0",
+    "sinon": "^1.17.3"
   }
 }

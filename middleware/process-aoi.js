@@ -14,25 +14,29 @@ exports.runner = function (options){
     res.header('Content-Type', 'text/plain')
 
     if (options.useQueue) {
-      console.log('Sending job to queue...');
-      console.log('req.file.filename = ', req.file.filename);
-      // Send job to queue
       var payload = {
         aoi_file: path.join(UPLOAD_PATH, req.file.filename),
         project_id: project_id,
         subject_set_id: subject_set_id
       }
-
-      queue.push( payload )
-      res.redirect(config.host + '/builds')
-
+      queue.push( payload ) // send job to message queue
+      res.redirect( config.host + '/builds')
     } else {
-      console.log('Running job locally without queue...');
-      res.redirect(config.host + '/builds')
-      var script = 'generate-planet-labs-subjects'
+      res.redirect( config.host + '/builds')
+      var script = 'build-status-simulator' //'generate-subjects'
       var aoi_file = req.file.path
-      var job = fork(script, [project_id, subject_set_id, aoi_file])
-
+      var job = fork(script, [
+        '--mosaics',
+          // TO DO: these probably shouldn't be hard-coded
+          // 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/',
+          // 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/',
+          'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/',
+          'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/',
+        '--project', project_id,
+        '--subject-set', subject_set_id,
+        aoi_file
+      ])
     }
+
   }
 }

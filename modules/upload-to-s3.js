@@ -8,7 +8,6 @@ module.exports = function (src, dest, bucket, callback){
   })
 
   var s3 = new AWS.S3();
-  var bucket   = bucket //'planetary-response-network'
   var filename = src    //'data/L15-1509E-1187N_before_9_10.png'
   var file_buffer = fs.readFileSync(filename);
 

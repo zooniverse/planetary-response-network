@@ -2,9 +2,9 @@ var os             = require('os')
 var fs             = require('fs')
 var im             = require('imagemagick')
 var path           = require('path')
+var gdal           = require('gdal')
 var async          = require('async')
 var imgMeta        = require('./image-meta')
-var pxToGeo        = require('./px-to-geo')
 var geoCoords      = require('./geo-coords')
 
 /**
@@ -14,7 +14,7 @@ var geoCoords      = require('./geo-coords')
  * @param  {Number}   overlap  Amount by which to overlap tiles in x and y (in pixels)
  * @param  {Function} callback
  */
-module.exports = function (filename, tileSize, overlap, callback){
+function tilizeImage (filename, tileSize, overlap, callback){
   var tile_wid = tileSize;
   var tile_hei = tileSize;
   var step_x = 4 * tile_wid - overlap;
@@ -22,14 +22,9 @@ module.exports = function (filename, tileSize, overlap, callback){
 
   var basename = path.basename(filename).split('.')[0]
   var dirname  = path.dirname(filename)
-  var metadata = geoCoords.getMetadata(filename)
-
-  var json_filename = dirname + '/' + basename + '.json'
-  geoCoords.writeMetaToJSON( json_filename, metadata ) // write metadata for coordinate interpolations
-
-  var content = JSON.parse( fs.readFileSync( dirname + '/' + basename + '.json' ) )
-  var size = content.metadata.size
-  var reference_coordinates = content.metadata.reference_coordinates
+  var ds = gdal.open(filename)
+  var metadata = geoCoords.getMetadata(ds)
+  var size = metadata.size
 
   // Tile creator
   var create_tile_task = function (task, done) {
@@ -45,15 +40,17 @@ module.exports = function (filename, tileSize, overlap, callback){
 
     /* Convert corner and center pixel coordinates to geo */
     var coords = {
-      upper_left   : pxToGeo( offset_x,                offset_y,                size.x, size.y, reference_coordinates),
-      upper_right  : pxToGeo( offset_x + tile_wid,     offset_y,                size.x, size.y, reference_coordinates),
-      bottom_right : pxToGeo( offset_x + tile_wid,     offset_y + tile_hei,     size.x, size.y, reference_coordinates),
-      bottom_left  : pxToGeo( offset_x,                offset_y + tile_hei,     size.x, size.y, reference_coordinates),
-      center       : pxToGeo( offset_x + tile_wid / 2, offset_y + tile_hei / 2, size.x, size.y, reference_coordinates) // NOT (lower_right.lat - upper_left.lat, lower_right.lon - upper_left.lon) because meridians and parallels
+      upper_left   : geoCoords.pxToWgs84(ds, offset_x,                offset_y),
+      upper_right  : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y),
+      bottom_right : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y + tile_hei),
+      bottom_left  : geoCoords.pxToWgs84(ds, offset_x,                offset_y + tile_hei),
+      center       : geoCoords.pxToWgs84(ds, offset_x + tile_wid / 2, offset_y + tile_hei / 2)
     }
 
-    // console.log('creating tile...', task) // DEBUG CODE
-    im.convert([ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
+    // Should we -normalize each tile?
+    // PRO: Ensures contrast is stretched if images are too dark or washed out
+    // CON: May take longer to process?
+    im.convert([ filename + '[0]', '-crop', crop_option, '-background', 'black', '-normalize', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
       if (err) return done(err)
       imgMeta.write(outfilename, '-userComment', coords, done)  // write coordinates to tile image metadata
     })
@@ -64,13 +61,13 @@ module.exports = function (filename, tileSize, overlap, callback){
   var queue = async.queue(create_tile_task, concurrency)
 
   // Completion callback
-  queue.drain = function (error, result) {
-    var prof2 = new Date().getTime() / 1000
+  queue.drain = function (error) {
     console.log('  Finished tilizing mosaic: ' + filename);
-    callback(error, result)
+    callback(error, files)
   }
 
   // Push tile tasks into queue
+  var files = [];
   for( var offset_x=0, row=0; offset_x<=size.x; offset_x+=step_x, row+=1) {
     for( var offset_y=0, col=0; offset_y<=size.y; offset_y+=step_y, col+=1) {
       queue.push({
@@ -78,7 +75,14 @@ module.exports = function (filename, tileSize, overlap, callback){
         col: col,
         offset_x: offset_x,
         offset_y: offset_y
+      }, function (err, file) {
+        files.push(file);
       })
     }
   } // end outer for loop
 }
+
+
+module.exports = {
+  tilize: tilizeImage
+};

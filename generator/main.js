@@ -4,9 +4,7 @@ const fork             = require('child_process').fork
 const RSMQWorker       = require('rsmq-worker')
 
 const LOG_TAG = 'prn_factory'
-// const GENERATOR_SCRIPT = path.join(__dirname, '../planet-api-before-after-test.js')
-const GENERATOR_SCRIPT = path.join(__dirname, '../generate-planet-labs-subjects.js')
-
+const GENERATOR_SCRIPT = path.join(__dirname, '../generate-subjects.js')
 const QUEUE_NAME = 'zooniverse_prn'
 
 // Scoped logging
@@ -29,7 +27,19 @@ const worker = new RSMQWorker(QUEUE_NAME, {
 // Listen for jobs
 worker.on( "message", function(payload, next) {
   payload = JSON.parse(payload)
-  const job = fork(GENERATOR_SCRIPT, [payload.project_id, payload.subject_set_id, payload.aoi_file])
+
+  const job = fork(GENERATOR_SCRIPT, [
+    '--mosaics',
+      // TO DO: these probably shouldn't be hard-coded
+      // 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/',
+      // 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/',
+      'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/',
+      'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/',
+    '--project', payload.project_id,
+    '--subject-set', payload.subject_set_id,
+    payload.aoi_file
+  ])
+
   job.on('close', function (code) {
     log('Job for', payload, 'finished with code', code)
     next()

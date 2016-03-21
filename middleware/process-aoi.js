@@ -1,7 +1,8 @@
 'use strict'
-const fork = require('child_process').fork
-const path = require('path')
+const fork  = require('child_process').fork
+const path  = require('path')
 const queue = require('../lib/queue')
+
 const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
 
 module.exports = function (options) {
@@ -9,18 +10,30 @@ module.exports = function (options) {
     var project_id = req.body.project_id
     var subject_set_id = req.body.subject_set_id
     res.header('Content-Type', 'text/plain')
-    if (options.useQueue) {
-      // Send job to queue
-      queue.push(path.join(UPLOAD_PATH, req.file.filename))
 
-      // Send confirmation
+    if (options.useQueue) {
+      var payload = {
+        aoi_file: path.join(UPLOAD_PATH, req.file.filename),
+        project_id: project_id,
+        subject_set_id: subject_set_id
+      }
+      queue.push( payload ) // send job to message queue
       res.send('Upload complete, subject fetch job queued')
     } else {
       res.send('Upload complete, starting subject fetch job')
-      // Start job, ensuring correct working directory
-      var script = 'generate-planet-labs-subjects'
+      var script = 'generate-subjects'
       var aoi_file = req.file.path
-      var job = fork(script, [project_id, subject_set_id, aoi_file])
+      var job = fork(script, [
+        '--mosaics',
+          // TO DO: these probably shouldn't be hard-coded
+          'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/',
+          'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/',
+          // 'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/',
+          // 'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/',
+        '--project', project_id,
+        '--subject-set', subject_set_id,
+        aoi_file
+      ])
     }
   }
 }

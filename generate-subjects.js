@@ -38,4 +38,3 @@ manifest.deploy((err, result) => {
   if (err) throw err;
   console.log('Finished uploading subjects.');
 });
-

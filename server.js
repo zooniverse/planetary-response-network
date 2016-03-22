@@ -5,9 +5,8 @@ const multer     = require('multer')
 const yargs      = require('yargs')
 const path       = require('path')
 const fs         = require('fs')
-const http       = require('http')
-// const https       = require('https')
-const config     = require('./lib/config.json')
+// const http       = require('http')
+const https       = require('https')
 
 // Parse options
 const argv = yargs
@@ -15,26 +14,32 @@ const argv = yargs
   .default('use-queue', true)
   .argv
 
-// https.globalAgent.options.rejectUnauthorized = false;
-//
-// var key = fs.readFileSync('server.key')
-// var cert = fs.readFileSync('server.crt')
-//
-// var credentials = {
-//     key: key,
-//     cert: cert
-// };
+https.globalAgent.options.rejectUnauthorized = false;
+
+var key = fs.readFileSync('server.key')
+var cert = fs.readFileSync('server.crt')
+
+var credentials = {
+    key: key,
+    cert: cert
+};
 
 const app = express()
-const server = require('http').createServer(app)
-
+// const server = require('http').createServer(app)
+const server = require('https').createServer(credentials,app)
 const io = require('socket.io').listen(server)
+
 io.sockets.on('connection', function(socket){
   console.log('Socket connected: %s', socket.id )
 })
 
-var Redis = require('ioredis');
-var redis = new Redis({host: config.redis_server.host, port: config.redis_server.port});
+console.log('REDIS HOST: ', process.env.REDIS_HOST);
+
+const Redis = require('ioredis');
+const redis = new Redis({
+  host: process.env.REDIS_HOST || 'redis',
+  port: process.env.REDIS_PORT || 6379
+});
 
 redis.subscribe('build status', function(error, count){})
 

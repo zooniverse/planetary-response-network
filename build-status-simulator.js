@@ -1,7 +1,12 @@
-var Redis = require('ioredis');
-var redis = new Redis();
-var pub = new Redis();
-async = require('async')
+const async  = require('async')
+const Redis  = require('ioredis');
+
+console.log('REDIS_SKJDHSKJDH HOST: ', process.env.REDIS_HOST);
+
+const redis = new Redis({
+  host: process.env.REDIS_HOST || 'redis',
+  port: process.env.REDIS_PORT || 6379
+});
 
 const delay = 5000
 
@@ -18,7 +23,7 @@ var tasks = {
 function updateStatus(task, status){
   console.log('[BUILD STATUS] Task \'%s\' status updated to \'%s\'', task, status);
   tasks[task].status = status
-  pub.publish('build status', JSON.stringify(tasks));
+  redis.publish('build status', JSON.stringify(tasks));
 }
 
 async.forever(

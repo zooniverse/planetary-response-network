@@ -2,9 +2,9 @@
 const fork   = require('child_process').fork
 const path   = require('path')
 const queue  = require('../lib/queue')
-const config = require('../lib/config.json')
 
 const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
+const redirect_uri = 'https://localhost:3443/builds'
 
 exports.runner = function (options){
   return function (req, res, next) {
@@ -20,9 +20,9 @@ exports.runner = function (options){
         subject_set_id: subject_set_id
       }
       queue.push( payload ) // send job to message queue
-      res.redirect( config.host + '/builds')
+      res.redirect(redirect_uri)
     } else {
-      res.redirect( config.host + '/builds')
+      res.redirect(redirect_uri)
       var script = 'build-status-simulator' //'generate-subjects'
       var aoi_file = req.file.path
       var job = fork(script, [

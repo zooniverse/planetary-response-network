@@ -4,7 +4,8 @@ const fork             = require('child_process').fork
 const RSMQWorker       = require('rsmq-worker')
 
 const LOG_TAG = 'prn_factory'
-const GENERATOR_SCRIPT = path.join(__dirname, '../generate-subjects.js')
+const GENERATOR_SCRIPT = path.join(__dirname, '../build-status-simulator.js') // DEBUG CODE --STI
+// const GENERATOR_SCRIPT = path.join(__dirname, '../generate-subjects.js')
 const QUEUE_NAME = 'zooniverse_prn'
 
 // Scoped logging
@@ -13,8 +14,6 @@ function log () {
   msgs = msgs.concat(Array.from(arguments))
   console.log.apply(this, msgs)
 }
-
-console.log('CONSUMER USING REDIS HOST: ', process.env.REDIS_HOST || 'redis');
 
 // Create worker
 const worker = new RSMQWorker(QUEUE_NAME, {

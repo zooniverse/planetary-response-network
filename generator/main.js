@@ -40,10 +40,13 @@ worker.on( "message", function(payload, next, msgid) {
     payload.aoi_file
   ])
 
-  job.on('close', function (code) {
-    log('Job for', payload, 'finished with code', code)
-    next()
-  })
+  next()
+
+  /* Process jobs sequentially */
+  // job.on('close', function (code) {
+  //   log('Job for', payload, 'finished with code', code)
+  //   next()
+  // })
 })
 
 // Handle errors/lifecycle

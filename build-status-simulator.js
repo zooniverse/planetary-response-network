@@ -48,43 +48,51 @@ async.forever(
             }
             setTimeout( function(){
               updateStatus('fetching_mosaics', 'in-progress')
-              callback(null, 'one')
+              callback(null)
             }, delay)
         }.bind(this),
         function(callback){
             setTimeout( function(){
               updateStatus('fetching_mosaics', 'done')
               updateStatus('tilizing_mosaics', 'in-progress')
-              callback(null, 'one')
+              callback(null)
             }, delay)
         },
         function(callback){
             setTimeout( function(){
               updateStatus('tilizing_mosaics', 'done')
               updateStatus('generating_manifest', 'in-progress')
-              callback(null, 'one')
+              callback(null)
             }, delay)
         },
         function(callback){
             setTimeout( function(){
               updateStatus('generating_manifest', 'done')
               updateStatus('uploading_images', 'in-progress')
-              callback(null, 'one')
+              callback(null)
             }, delay)
         },
         function(callback){
             setTimeout( function(){
               updateStatus('uploading_images', 'done')
               updateStatus('deploying_subjects', 'in-progress')
-              callback(null, 'one')
+              callback(null)
             }, delay)
         },
         function(callback){
             setTimeout(function(){
               updateStatus('deploying_subjects', 'done')
               updateStatus('finished', 'in-progress')
-              callback(null, 'two')
-              next()
+              callback(null)
+            }, delay)
+        },
+        function(callback){
+            setTimeout(function(){
+              updateStatus('deploying_subjects', 'done')
+              updateStatus('finished', 'in-progress')
+              callback(null)
+              // next() // runs the script indefinitely
+              process.exit()
             }, 10000)
         }
     ])

@@ -5,7 +5,6 @@ const multer     = require('multer')
 const yargs      = require('yargs')
 const path       = require('path')
 const fs         = require('fs')
-// const http       = require('http')
 const https       = require('https')
 
 // Parse options
@@ -43,9 +42,8 @@ const redis = new Redis(redis_host);
 
 redis.psubscribe('status_*', function(error, count){})
 redis.on('pmessage', function (channel, pattern, message) {
-  // console.log('Received message \'%s\' from channel \'%s\'', message, channel);
   console.log('Received message from channel \'%s\'', pattern);
-  io.emit('build status', message) // emit message to socket.io clients
+  io.emit(pattern, message) // emit message to socket.io clients
 });
 
 const upload = multer({ dest: path.join(__dirname, './uploaded_aois') })

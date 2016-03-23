@@ -1,12 +1,21 @@
-const async  = require('async')
-const Redis  = require('ioredis');
+'use strict';
+const async = require('async')
+const Redis = require('ioredis');
+const yargs = require('yargs');
 
-console.log('REDIS_SKJDHSKJDH HOST: ', process.env.REDIS_HOST);
+// Go
+const argv = yargs
+  .describe('job-id', 'Unique job identifier')
+  .argv;
 
-const redis = new Redis({
+const redis_host = {
   host: process.env.REDIS_HOST || 'redis',
   port: process.env.REDIS_PORT || 6379
-});
+}
+
+const redis = new Redis(redis_host);
+const pub   = new Redis(redis_host);
+// const redis = new Redis();
 
 const delay = 5000
 
@@ -23,7 +32,10 @@ var tasks = {
 function updateStatus(task, status){
   console.log('[BUILD STATUS] Task \'%s\' status updated to \'%s\'', task, status);
   tasks[task].status = status
-  redis.publish('build status', JSON.stringify(tasks));
+  var channel = 'status_'+argv.jobId;
+  redis.subscribe(channel, function(error, count){
+    pub.publish(channel, JSON.stringify(tasks));
+  });
 }
 
 async.forever(

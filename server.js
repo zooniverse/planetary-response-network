@@ -33,18 +33,18 @@ io.sockets.on('connection', function(socket){
   console.log('Socket connected: %s', socket.id )
 })
 
-console.log('REDIS HOST: ', process.env.REDIS_HOST);
-
-const Redis = require('ioredis');
-const redis = new Redis({
+const redis_host = {
   host: process.env.REDIS_HOST || 'redis',
   port: process.env.REDIS_PORT || 6379
-});
+}
 
-redis.subscribe('build status', function(error, count){})
+const Redis = require('ioredis');
+const redis = new Redis(redis_host);
 
-redis.on('message', function (channel, message) {
-  // console.log('Receive message \'%s\' from channel \'%s\'', message, channel);
+redis.psubscribe('status_*', function(error, count){})
+redis.on('pmessage', function (channel, pattern, message) {
+  // console.log('Received message \'%s\' from channel \'%s\'', message, channel);
+  console.log('Received message from channel \'%s\'', pattern);
   io.emit('build status', message) // emit message to socket.io clients
 });
 

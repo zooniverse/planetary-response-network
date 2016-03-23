@@ -24,10 +24,11 @@ const worker = new RSMQWorker(QUEUE_NAME, {
 })
 
 // Listen for jobs
-worker.on( "message", function(payload, next) {
+worker.on( "message", function(payload, next, msgid) {
   payload = JSON.parse(payload)
 
   const job = fork(GENERATOR_SCRIPT, [
+    '--job-id', msgid,
     '--mosaics',
       // TO DO: these probably shouldn't be hard-coded
       // 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/',

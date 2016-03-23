@@ -14,13 +14,15 @@ exports.runner = function (options){
     res.header('Content-Type', 'text/plain')
 
     if (options.useQueue) {
-      var payload = {
+      var jobInfo = {
         aoi_file: path.join(UPLOAD_PATH, req.file.filename),
         project_id: project_id,
         subject_set_id: subject_set_id
       }
-      queue.push( payload ) // send job to message queue
-      res.redirect(redirect_uri)
+      queue.push(jobInfo, function(job_id){
+        res.redirect(redirect_uri + '?job_id=' + job_id)
+      }) // send job to message queue
+
     } else {
       res.redirect(redirect_uri)
       var script = 'build-status-simulator' //'generate-subjects'

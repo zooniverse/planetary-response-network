@@ -7,6 +7,7 @@ const Manifest      = require('./modules/manifest');
 // Go
 const argv = yargs
   .usage('$0 [options] <kml_file>')
+  .describe('job-id',        'Unique job identifier')
   .describe('provider',      'Tile provider to use')
   .describe('mosaics',       'Space-separated urls of mosaics to use')
   .describe('project',       'ID of target project')

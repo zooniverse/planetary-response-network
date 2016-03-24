@@ -64,6 +64,20 @@ function fetchQuadsFromAOI (bounds, url, label, callback) {
     },
   },
   function (error, response, body) {
+// <<<<<<< HEAD
+//     if(error) {
+//       callback(error)
+//     } else {
+//         // TO DO: should check if body.message is returned (usually when API key fails)
+//         var data = JSON.parse(body)
+//         console.log('Found ' + data.features.length + ' mosaics.');
+//         processFeatures(data.features, label,
+//           function(result){
+//             if(callback) callback(null, result)
+//           }
+//         ) // download images and data
+//     }
+// =======
     callback(error, JSON.parse(body));
   })
 }

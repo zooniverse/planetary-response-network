@@ -10,15 +10,29 @@ var csvStringify = require('csv-stringify')
 var uploadToS3   = require('./modules/upload-to-s3.js')
 var panoptesAPI  = require('./modules/panoptes-api.js')
 var parseCsv     = require('csv-parse')
+var yargs        = require('yargs')
+var Redis        = require('ioredis');
+var config       = require('./lib/config.json')
+
+console.log('USING REDIS CONFIGURATION:', config.redis_server);
+var pub = new Redis({host: config.redis_server.host, port: config.redis_server.port});
+
+// Parse options
+var argv = yargs
+  .default('cli-only', false)
+  .argv
 
  /* Selected mosaic */
 var before_url = 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/'
 var after_url  = 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/'
 
+// var before_url = 'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/'
+// var after_url  = 'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/'
+
 /* Read area of interest */
 var project_id = process.argv[2]
 var subject_set_id = process.argv[3]
-var kml_file = process.argv[4] || 'data/central-kathmandu.kml'
+var kml_file = process.argv[4] || 'data/k-town.kml' //'data/central-kathmandu.kml'
 
 console.log('Using { project_id: ' + project_id + ', subject_set_id: ' + subject_set_id + '}')
 console.log('Opening AOI file ', kml_file)
@@ -31,15 +45,33 @@ var bounds = geoJSON.features[0].geometry.coordinates[0]
 var manifest_file = 'data/manifest.csv'
 var bucket = 'planetary-response-network'
 
-console.log('Fetching Mosaics...');
+// status should be one of three values: null, in-progress, done, error
+var tasks = {
+    fetching_mosaics:    {status: null, label: 'Fetching mosaics'},
+    tilizing_mosaics:    {status: null, label: 'Tilizing mosaic images'},
+    generating_manifest: {status: null, label: 'Generating subject manifest'},
+    uploading_images:    {status: null, label: 'Uploading images'},
+    deploying_subjects:  {status: null, label: 'Deploying subjects'},
+    finished:            {status: null, label: 'Build completed successfully'}
+}
+
+function updateStatus(task, status){
+  console.log('[BUILD STATUS] Task \'%s\' status updated to \'%s\'', task, status);
+  tasks[task].status = status
+  pub.publish('build status', JSON.stringify(tasks));
+}
+
+updateStatus('fetching_mosaics', 'in-progress')
 
 /* Call Planet API and download GeoTIF and accompanying JSON files */
 planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
   // process downloaded mosaics
   function (error, result){
     if(error){
+      updateStatus('fetching_mosaics', 'error')
       console.log(error);;
     } else{
+      updateStatus('fetching_mosaics', 'done')
       var task_list = []
       for(var i=0; i<result.length; i++){
         regions = result[i];
@@ -48,35 +80,42 @@ planetAPI.fetchBeforeAndAfterMosaicFromAOI( before_url, after_url, bounds,
           task_list.push( async.apply( tilizeImage.tilize, image_file, 480, 160 ) )
         }
       }
-      console.log('Tilizing images...');
+
+      updateStatus('tilizing_mosaics', 'in-progress')
       var start_time = Date.now()
 
-      async.series( task_list, function(error, result) {
-        var elapsed_time = parseFloat( (Date.now()-start_time) / 60 / 1000).toFixed(2)
-        console.log('Tilizing complete (' + elapsed_time + ' minutes)');
-        console.log('Generating manifest file...');
-        generateManifest( manifest_file, function(){
-          deployPanoptesSubjects(manifest_file, project_id, subject_set_id, function(){
-            // console.log('Finished uploading subjects.');
+      async.series( task_list, function(error, result){
+        if(error) {
+          updateStatus('tilizing_mosaics', 'error')
+        } else {
+          updateStatus('tilizing_mosaics', 'done')
+          var elapsed_time = parseFloat( (Date.now()-start_time) / 60 / 1000).toFixed(2)
+          console.log('Tilizing complete (' + elapsed_time + ' minutes)');
+          generateManifest( manifest_file, function(){
+            deployPanoptesSubjects(manifest_file, project_id, subject_set_id, function(){
+              // console.log('Finished uploading subjects.');
+            })
           })
-        })
+        }
       })
     }
   }
 )
 
 function deployPanoptesSubjects(manifest_file, project_id, subject_set_id, callback){
-  console.log('Uploading images...');
 
   // maybe clean up using async.waterfall?
   fs.readFile(manifest_file, function(error,data){
     parseCsv(data, {columns: true}, function(error,rows){
       uploadImages(rows, function(error,rows){
         generateSubjects(rows, function(error,subjects){
+          updateStatus('deploying_subjects', 'in-progress')
           panoptesAPI.saveSubjects(subjects, function(error,result){
             if(error){
+              updateStatus('deploying_subjects', 'error')
               callback(error)
             } else{
+              updateStatus('deploying_subjects', 'done')
               callback(null, result)
             }
           })
@@ -88,10 +127,13 @@ function deployPanoptesSubjects(manifest_file, project_id, subject_set_id, callb
 }
 
 function uploadImages(rows, callback){
+  updateStatus('uploading_images', 'in-progress')
   async.mapSeries(rows, uploadSubjectImagesToS3, function(error,rows){
     if(error){
+      updateStatus('uploading_images', 'error')
       callback(error)
     } else{
+      updateStatus('uploading_images', 'done')
       callback(null,rows)
     }
   })
@@ -109,6 +151,12 @@ function generateSubjects(rows, callback){
 
 // Note: assumes there are two valid images in each row
 function uploadSubjectImagesToS3(row, callback){
+
+  // // DEBUG
+  // setTimeout( function(){
+  //   callback(null, row)
+  // }, 10000)
+
   async.series([
     async.apply( uploadToS3, row['image1'], row['image1'], bucket ),
     async.apply( uploadToS3, row['image2'], row['image2'], bucket )
@@ -138,6 +186,7 @@ function createSubjectFromManifestRow(row, callback){
 }
 
 function generateManifest(manifest_file, callback){
+  updateStatus('generating_manifest', 'in-progress')
   // create csv header
   var csv_header = [ 'image1', 'image2', 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ]
 
@@ -147,7 +196,7 @@ function generateManifest(manifest_file, callback){
       csv_rows.splice(0, 0, csv_header);
       csvStringify(csv_rows, function(error, output){
         fs.writeFile(manifest_file, output, function(){
-          console.log('Finished writing manifest.')
+          updateStatus('generating_manifest', 'done')
           callback(null, manifest_file)
         });
       });

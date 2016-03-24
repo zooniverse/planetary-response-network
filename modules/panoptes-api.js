@@ -31,8 +31,7 @@ function saveSubjects(subjects, callback){
              callback(null, subject)
             })
             .catch(function(error) {
-             console.log("Error saving subject data! ", error);
-             callback(error)
+             callback(error);
             })
         }
       }(subject), delay);

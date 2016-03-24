@@ -5,3 +5,7 @@ npm-debug.log
 npm-debug.log
 supervisord.log
 supervisord.pid
+
+# SSL assets
+server.key
+server.crt

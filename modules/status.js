@@ -9,8 +9,6 @@ class Status {
     this.redis = new Redis(this.redisHost);
     this.pub = new Redis(this.redisHost);
 
-    console.log('PUB = ', this.pub);
-
     // status should be one of four values: null, 'in-progress', 'done', or 'error'
     this.tasks = {
         fetching_mosaics:    {status: null, label: 'Fetching mosaics'},

@@ -23,8 +23,6 @@ const argv = yargs
   .demand(1)
   .argv;
 
-console.log('ARGV = ', argv);
-
 // Load AOI
 const file = argv._[0];
 console.log('Loading AOI from KML file', file);

@@ -24,17 +24,20 @@ exports.runner = function (options){
       }) // send job to message queue
 
     } else {
-      res.redirect(redirect_uri)
-      var script = 'generate-subjects' //'build-status-simulator' //'generate-subjects'
+      // generate a fake job-id
+      var job_id = 'jobid.' + Math.floor( Math.random()*(9999-1000)+1000 );
+      res.redirect(redirect_uri + '?job_id=' + job_id);
+      var script = 'generate-subjects' //'build-status-simulator'
       var aoi_file = req.file.path
       var job = fork(script, [
-        '--job-id', 'jobid.'+Math.floor(Math.random()*(9999-1000)+1000), // generate a random job id
+        '--job-id', job_id, // generate a random job id
         '--mosaics',
           // TO DO: these probably shouldn't be hard-coded
           // 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/',
           // 'https://api.planet.com/v0/mosaics/nepal_3mo_pre_eq_mag_6_mosaic/quads/',
-          'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/',
-          'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/',
+          // 'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/',
+          // 'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/',
+          'https://api.planet.com/v0/mosaics/color_balance_mosaic/quads/',
         '--project', project_id,
         '--subject-set', subject_set_id,
         aoi_file

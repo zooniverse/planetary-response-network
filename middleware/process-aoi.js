@@ -25,9 +25,10 @@ exports.runner = function (options){
 
     } else {
       res.redirect(redirect_uri)
-      var script = 'build-status-simulator' //'generate-subjects'
+      var script = 'generate-subjects' //'build-status-simulator' //'generate-subjects'
       var aoi_file = req.file.path
       var job = fork(script, [
+        '--job-id', 'jobid.'+Math.floor(Math.random()*(9999-1000)+1000), // generate a random job id
         '--mosaics',
           // TO DO: these probably shouldn't be hard-coded
           // 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/',

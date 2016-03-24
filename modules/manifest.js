@@ -15,11 +15,12 @@ class Manifest {
    * @param  {Number}                projectId      Id of Panoptes project to which subjects should be sent
    * @param  {Number}                subjectSetId   Id of Panoptes subject set to which subjects should be sent
    */
-  constructor(mosaics, aoi, projectId, subjectSetId) {
+  constructor(mosaics, aoi, projectId, subjectSetId, status) {
     this.mosaics = mosaics;
     this.aoi = aoi;
     this.projectId = projectId;
     this.subjectSetId = subjectSetId;
+    this.status = status;
   }
 
   /**
@@ -80,13 +81,31 @@ class Manifest {
     async.waterfall([
       this.getSubjects.bind(this),
       this.uploadSubjectsImages.bind(this),
-      panoptesAPI.saveSubjects
+      this.deploySubjectsToPanoptes.bind(this)
+      // panoptesAPI.saveSubjects
     ], callback);
+  }
+
+  deploySubjectsToPanoptes(subjects, callback) {
+    this.status.update('deploying_subjects', 'in-progress');
+    panoptesAPI.saveSubjects(subjects, function(err, callback){
+      if(err) {
+        console.log(err);
+        this.status.update('deploying_subjects', 'error');
+        throw err;
+      }
+      // if successful...
+    }.bind(this));
   }
 
   uploadSubjectsImages(subjects, callback){
     console.log('Uploading images...');
-    async.mapSeries(subjects, this.uploadSubjectImagesToS3.bind(this), callback);
+    this.status.update('uploading_images', 'in-progress');
+    async.mapSeries(subjects, this.uploadSubjectImagesToS3.bind(this), function(err, subjects){
+      if (err) callback(err)
+      this.status.update('uploading_images', 'done');
+      callback(null, subjects)
+    }.bind(this));
   }
 
   uploadSubjectImagesToS3(subject, callback){

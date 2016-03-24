@@ -6,10 +6,11 @@ const tilizeImage = require('./tilize-image');
 
 class Mosaic {
 
-  constructor(provider, label, url) {
+  constructor(provider, label, url, status) {
     this.provider = provider;
     this.label = label;
     this.url = url;
+    this.status = status;
   }
 
   /**
@@ -18,14 +19,17 @@ class Mosaic {
    * @param  {Function} callback
    */
   fetchQuadsForAOI(aoi, callback){
-
+    this.status.update('fetching_mosaics', 'in-progress');
     PlanetAPI.fetchQuadsFromAOI(aoi.bounds, this.url, this.label, (err, quads) => {
-      if (err) throw err;
-
+      console.log('QUADS: ', quads);
+      if (err) {
+        this.status.update('fetching_mosaics', 'error');
+        throw err;
+      }
       quads = quads.features.map(quad => {
         return new Quad(this, quad)
       })
-
+      this.status.update('fetching_mosaics', 'done');
       callback(null, quads);
     });
   }
@@ -54,6 +58,7 @@ class Mosaic {
       if (err) return callback(err);
 
       // Tile em up
+      this.status.update('tilizing_mosaics', 'in-progress');
       var tasks = [];
       for (var file of files) {
         tasks.push(async.apply(tilizeImage.tilize, file, 480, 160));
@@ -63,6 +68,7 @@ class Mosaic {
         for (var tiles of tilesByQuad) {
           mosaicTiles = mosaicTiles.concat(tiles);
         }
+        this.status.update('tilizing_mosaics', 'done');
         callback(err, mosaicTiles.sort());
       });
     });

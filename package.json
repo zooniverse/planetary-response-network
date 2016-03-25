@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "async": "~1.5.2",
-    "aws-sdk": "^2.2.32",
+    "aws-sdk": "^2.2.47",
     "chai": "^3.5.0",
     "csv-parse": "^1.0.1",
     "csv-stringify": "0.0.8",
@@ -27,6 +27,7 @@
     "ioredis": "^1.15.1",
     "jsdom": "^7.2.2",
     "json-format": "~0.1.1",
+    "mgrs": "0.0.3",
     "mkdirp": "^0.5.1",
     "mocha": "^2.4.5",
     "morgan": "^1.7.0",
@@ -37,6 +38,7 @@
     "rsmq-worker": "^0.3.8",
     "socket.io": "^1.4.5",
     "togeojson": "^0.13.0",
+    "utm-latlng": "^1.0.3",
     "xmlhttprequest-cookie": "^0.9.4",
     "yargs": "^3.31.0"
   },

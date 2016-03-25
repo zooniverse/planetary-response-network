@@ -2,6 +2,7 @@
 const fork   = require('child_process').fork
 const path   = require('path')
 const queue  = require('../lib/queue')
+const redis  = require('../lib/redis')
 
 const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
 const redirect_uri = 'https://localhost:3443/builds'
@@ -11,16 +12,24 @@ exports.runner = function (options){
 
     var project_id = req.body.project_id
     var subject_set_id = req.body.subject_set_id
-    res.header('Content-Type', 'text/plain')
 
     if (options.useQueue) {
+      // Create job data
       var jobInfo = {
         aoi_file: path.join(UPLOAD_PATH, req.file.filename),
         project_id: project_id,
         subject_set_id: subject_set_id
       }
-      queue.push(jobInfo, function(job_id){
-        res.redirect(redirect_uri + '?job_id=' + job_id)
+      // Send job to redis queue
+      // TODO replace 5 and 20 (repeat and interval) with values from request
+      queue.push(jobInfo, 5, 20, function(err, job_ids) {
+        console.log('jobs sent', job_ids)
+        // Add job to user's job list
+        // TODO get oauth working so we know which user this is
+        redis.rpush('user:USER_ID_HERE:jobs', job_ids, function(err, result) {
+          if (err) return next(err)
+          res.redirect(redirect_uri + '?job_id=' + job_ids[0])
+        })
       }) // send job to message queue
 
     } else {

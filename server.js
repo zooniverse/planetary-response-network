@@ -1,11 +1,14 @@
-const processAoi = require('./middleware/process-aoi')
-const express    = require('express')
-const morgan     = require('morgan')
-const multer     = require('multer')
-const yargs      = require('yargs')
-const path       = require('path')
-const fs         = require('fs')
-const https       = require('https')
+const processAoi   = require('./middleware/process-aoi')
+const express      = require('express')
+const morgan       = require('morgan')
+const multer       = require('multer')
+const yargs        = require('yargs')
+const path         = require('path')
+const fs           = require('fs')
+const https        = require('https')
+const session      = require('express-session')
+const RedisStore   = require('connect-redis')(session)
+const getBuilds    = require('./middleware/get-builds')
 
 // Parse options
 const argv = yargs
@@ -26,6 +29,7 @@ var credentials = {
 const app = express()
 // const server = require('http').createServer(app)
 const server = require('https').createServer(credentials,app)
+
 const io = require('socket.io').listen(server)
 
 io.sockets.on('connection', function(socket){
@@ -52,6 +56,9 @@ app.use(morgan('combined'))
 
 // Handle AOI uploads
 app.post('/aois', upload.single('file'), processAoi.runner({useQueue: argv.useQueue} ))
+
+// Builds route
+app.get('/builds', getBuilds);
 
 const port = process.env.PORT || 3736
 server.listen(port, function(error){

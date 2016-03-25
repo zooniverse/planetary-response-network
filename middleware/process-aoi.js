@@ -1,6 +1,7 @@
 'use strict'
 const fork   = require('child_process').fork
 const path   = require('path')
+const async  = require('async')
 const queue  = require('../lib/queue')
 const redis  = require('../lib/redis')
 
@@ -12,6 +13,8 @@ exports.runner = function (options){
 
     var project_id = req.body.project_id
     var subject_set_id = req.body.subject_set_id
+    var repeat = req.body.repeat
+    var interval = req.body.interval
 
     if (options.useQueue) {
       // Create job data
@@ -21,14 +24,22 @@ exports.runner = function (options){
         subject_set_id: subject_set_id
       }
       // Send job to redis queue
-      // TODO replace 5 and 20 (repeat and interval) with values from request
-      queue.push(jobInfo, 5, 20, function(err, job_ids) {
+      queue.push(jobInfo, repeat, interval, function(err, job_ids) {
         console.log('jobs sent', job_ids)
-        // Add job to user's job list
-        // TODO get oauth working so we know which user this is
-        redis.rpush('user:USER_ID_HERE:jobs', job_ids, function(err, result) {
+        // Create records for each repeat of job
+        async.map(job_ids, (job_id, done) => {
+          var job = Object.assign({}, {
+            id: job_id
+          }, jobInfo)
+          redis.set('job:'+job_id, JSON.stringify(job), done)
+        }, (err, jobs) => {
           if (err) return next(err)
-          res.redirect(redirect_uri + '?job_id=' + job_ids[0])
+          // Add job id to user's job list
+          // TODO get oauth working so we know which user this is
+          redis.rpush('user:USER_ID_HERE:jobs', job_ids, (err, status) => {
+            if (err) return next(err)
+            res.redirect(redirect_uri)
+          })
         })
       }) // send job to message queue
 

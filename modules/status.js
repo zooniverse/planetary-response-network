@@ -1,5 +1,6 @@
 'use strict';
 const Redis = require('ioredis');
+const redisRw = require('../lib/redis') // need this separate client for the keystore because the client created by Status is pubsub only
 
 class Status {
 
@@ -33,10 +34,15 @@ class Status {
     }
     console.log('[STATUS: %s] Task \'%s\' status updated to \'%s\'', this.jobId, task, status);
     this.tasks[task].status = status
-    var channel = 'status_'+this.jobId;
+    var channel = 'status:'+this.jobId;
+    var wholeState = JSON.stringify(this.tasks);
+    // Publish event
     this.redis.subscribe(channel, function(error, count){
-      this.pub.publish(channel, JSON.stringify(this.tasks));
+      this.pub.publish(channel, wholeState);
     }.bind(this));
+
+    // Write permanent record of event
+    redisRw.set('job:'+this.jobId+':status', wholeState);
   }
 
 }

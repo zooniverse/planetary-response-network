@@ -9,6 +9,7 @@ const https        = require('https')
 const session      = require('express-session')
 const RedisStore   = require('connect-redis')(session)
 const getBuilds    = require('./middleware/get-builds')
+const cors         = require('cors')
 
 // Parse options
 const argv = yargs
@@ -27,6 +28,13 @@ var credentials = {
 };
 
 const app = express()
+
+// Enable CORS - TODO restrict to trusted origin URLs
+app.use(cors({
+  origin: '*',
+  credentials: true
+}))
+
 // const server = require('http').createServer(app)
 const server = require('https').createServer(credentials,app)
 
@@ -44,7 +52,7 @@ const redis_host = {
 const Redis = require('ioredis');
 const redis = new Redis(redis_host);
 
-redis.psubscribe('status_*', function(error, count){})
+redis.psubscribe('status:*', function(error, count){})
 redis.on('pmessage', function (channel, pattern, message) {
   console.log('Received message from channel \'%s\'', pattern);
   io.emit(pattern, message) // emit message to socket.io clients

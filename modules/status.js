@@ -1,16 +1,13 @@
 'use strict';
-const Redis = require('ioredis');
-const redisRw = require('../lib/redis') // need this separate client for the keystore because the client created by Status is pubsub only
+const redisRw = require('../lib/redis')
+const redisPubSub = require('../lib/redis-pubsub')
+const redisPub = redisPubSub.pub
+const redisSub = redisPubSub.sub
 
 class Status {
 
-  constructor(jobId, redisHost) {
+  constructor(jobId) {
     this.jobId = jobId;
-    this.redisHost = redisHost;
-    this.redis = new Redis(this.redisHost);
-    this.pub = new Redis(this.redisHost);
-
-    console.log('PUB = ', this.pub);
 
     // status should be one of four values: null, 'in-progress', 'done', or 'error'
     this.tasks = {
@@ -28,7 +25,7 @@ class Status {
    * @param {String}  task
    * @param {String}  status
    */
-  update(task, status) {
+  update(task, status, callback) {
     if( this.tasks[task] === undefined ) {
       console.log('ERROR: Could not find task \'%s\' in Status::update()', task);
     }
@@ -37,8 +34,9 @@ class Status {
     var channel = 'status:'+this.jobId;
     var wholeState = JSON.stringify(this.tasks);
     // Publish event
-    this.redis.subscribe(channel, function(error, count){
-      this.pub.publish(channel, wholeState);
+    redisSub.subscribe(channel, function(error, count){
+      redisPub.publish(channel, wholeState);
+      if (callback) callback(error);
     }.bind(this));
 
     // Write permanent record of event

@@ -1,6 +1,7 @@
 'use strict'
 const path             = require('path')
 const fork             = require('child_process').fork
+const async            = require('async')
 const RSMQWorker       = require('rsmq-worker')
 
 const LOG_TAG = 'prn_factory'
@@ -23,12 +24,10 @@ const worker = new RSMQWorker(QUEUE_NAME, {
   timeout: 0 // Wait indefinitely for jobs to finish before grabbing another
 })
 
-// Listen for jobs
-worker.on( "message", function(payload, next, msgid) {
-  payload = JSON.parse(payload)
-
+// Runs subject gen task
+function generateSubjects (task, done) {
   const job = fork(GENERATOR_SCRIPT, [
-    '--job-id', msgid,
+    '--job-id', task.msgid,
     '--mosaics',
       // TO DO: these probably shouldn't be hard-coded
       // 'https://api.planet.com/v0/mosaics/nepal_unrestricted_mosaic/quads/',
@@ -36,18 +35,28 @@ worker.on( "message", function(payload, next, msgid) {
       // 'https://api.planet.com/v0/mosaics/open_california_re_20131201_20140228/quads/',
       // 'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/',
       'https://api.planet.com/v0/mosaics/color_balance_mosaic/quads/',
-    '--project', payload.project_id,
-    '--subject-set', payload.subject_set_id,
-    payload.aoi_file
+    '--project', task.project_id,
+    '--subject-set', task.subject_set_id,
+    task.aoi_file
   ])
 
-  next()
+  job.on('close', function (code) {
+    done(null, code)
+  })
+}
 
-  /* Process jobs sequentially */
-  // job.on('close', function (code) {
-  //   log('Job for', payload, 'finished with code', code)
-  //   next()
-  // })
+// Create execution queue
+const execQueue = async.queue(generateSubjects, 1)
+
+// Listen for jobs
+worker.on( "message", function(payload, next, msgid) {
+  payload = JSON.parse(payload)
+  payload.msgid = msgid
+
+  execQueue.push(payload, (err, code) => {
+    log('Job', msgid, 'for', payload, 'finished with code', code)
+    next()
+  })
 })
 
 // Handle errors/lifecycle

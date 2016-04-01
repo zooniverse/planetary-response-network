@@ -82,19 +82,20 @@ class Manifest {
       this.getSubjects.bind(this),
       this.uploadSubjectsImages.bind(this),
       this.deploySubjectsToPanoptes.bind(this)
-      // panoptesAPI.saveSubjects
     ], callback);
   }
 
   deploySubjectsToPanoptes(subjects, callback) {
     this.status.update('deploying_subjects', 'in-progress');
-    panoptesAPI.saveSubjects(subjects, function(err, callback){
+    panoptesAPI.saveSubjects(subjects, function(err){
       if(err) {
         console.log(err);
-        this.status.update('deploying_subjects', 'error');
-        throw err;
+        return this.status.update('deploying_subjects', 'error', () => {
+          callback(err);
+        });
       }
       // if successful...
+      this.status.update('deploying_subjects', 'done', callback);
     }.bind(this));
   }
 

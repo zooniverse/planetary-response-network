@@ -21,7 +21,6 @@ class Mosaic {
   fetchQuadsForAOI(aoi, callback){
     this.status.update('fetching_mosaics', 'in-progress');
     PlanetAPI.fetchQuadsFromAOI(aoi.bounds, this.url, this.label, (err, quads) => {
-      console.log('QUADS: ', quads);
       if (err) {
         this.status.update('fetching_mosaics', 'error');
         throw err;

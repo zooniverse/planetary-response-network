@@ -6,8 +6,10 @@ const Manifest      = require('./modules/manifest');
 const Status        = require('./modules/status');
 
 // for Sentinel-2 data
-const utmObj = require('utm-latlng');
-const mgrs   = require('mgrs');
+const utmObj   = require('utm-latlng');
+const mgrs     = require('mgrs');
+const sentinel = require('./modules/sentinel-api');
+
 
 // Go
 const argv = yargs
@@ -75,13 +77,15 @@ function fetchPlanetData() {
 
 function fetchSentinelData(bounds) {
   console.log('Fetching Sentinel-2 data...');
-  console.log('BOUNDS: ', bounds);
+  // console.log('BOUNDS: ', bounds);
 
-  for(let coord of bounds) {
-    console.log('------------------------');
-    console.log('COORD: ', coord);
-    console.log('MGRS : ', mgrs.forward(coord));
-  }
+  sentinel.searchTilesByAOI(bounds);
+
+  // for(let coord of bounds) {
+  //   console.log('------------------------');
+  //   console.log('COORD: ', coord);
+  //   console.log('MGRS : ', mgrs.forward(coord));
+  // }
 
   process.exit(0);
 }

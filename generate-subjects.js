@@ -51,7 +51,15 @@ switch (argv.provider){
     break;
   case 'sentinel-2':
     console.log('Using mosaic provider \'%s\'', argv.provider);
-    fetchSentinelData(aoi.bounds);
+    var params = {
+      bounds: aoi.bounds,
+      cloudcoverpercentage: '[0 TO 50]',
+      platformname: 'Sentinel-2'
+    }
+    sentinel.fetchDataFromCopernicus(params, function(downloadList) {
+      console.log('RESULT: ', downloadList);
+      process.exit(0);
+    });
     break;
   default:
     console.log('ERROR: Invalid provider \'%s\'', argv.provider);
@@ -72,44 +80,3 @@ function fetchPlanetData() {
     console.log('Finished uploading subjects.');
   });
 }
-
-// Fetches data from Sinergise/ESA Sentinel 2 API
-
-function fetchSentinelData(bounds) {
-  console.log('Fetching Sentinel-2 data...');
-  // console.log('BOUNDS: ', bounds);
-
-  sentinel.searchTilesByAOI(bounds);
-
-  // for(let coord of bounds) {
-  //   console.log('------------------------');
-  //   console.log('COORD: ', coord);
-  //   console.log('MGRS : ', mgrs.forward(coord));
-  // }
-
-  process.exit(0);
-}
-
-
-
-
-// const AWS    = require('aws-sdk');
-// const utmObj = require('utm-latlng');
-//
-//
-// var s3 = new AWS.S3({
-//   region: 'eu-central-1',
-//   params: { Bucket: 'sentinel-s2-l1c' }
-// });
-//
-// s3.listObjects( { Prefix: 'tiles', Marker: '.jp2' }, function(err, data) {
-//   if (err) console.log(err, err.stack);
-//   else {
-//     console.log(data);
-//   }
-// });
-//
-//
-// // var utm=new utmObj('WGS 84');
-// // var coords = utm.convertUtmToLatLng(300000.0, 2990220.0 , 45, 'R')
-// // console.log('COORDINATES: ', coords.lat, coords.lng )

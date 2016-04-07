@@ -56,7 +56,9 @@ switch (argv.provider){
       cloudcoverpercentage: '[0 TO 50]',
       platformname: 'Sentinel-2'
     }
-    sentinel.fetchDataFromCopernicus(params, function(downloadList) {
+
+    sentinel.fetchDataFromCopernicus(params, function(downloadList) { // METHOD #1
+    // sentinel.fetchDataFromSinergise(aoi.bounds, function(downloadList) { // METHOD #2
       console.log('RESULT: ', downloadList);
       process.exit(0);
     });

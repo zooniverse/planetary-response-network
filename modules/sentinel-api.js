@@ -1,3 +1,4 @@
+'use strict';
 const AWS    = require('aws-sdk');
 // const utmObj = require('utm-latlng');
 const mgrs   = require('mgrs');
@@ -33,7 +34,7 @@ function fetchDataFromCopernicus(params, callback) {
   var headers = { 'Content-Type': 'application/json', 'Accept': 'application/json'};
   var args = { headers: headers };
 
-  // console.log('URL: ', url); // FOR DEBUG --STI
+  console.log('URL: ', url); // FOR DEBUG
 
   var req = client.get(url, args, function(data, response) {
     generateDownloadList(data, callback);
@@ -44,9 +45,18 @@ function fetchDataFromCopernicus(params, callback) {
 
 }
 
-function fetchDataFromSinergise(bounds) {
+function fetchDataFromSinergise(bounds, callback) {
   console.log('Fetching data from Sinergise...');
+  var mgrsTiles = boundsToMgrsTiles(bounds);
+  console.log('mgrsTiles = ', mgrsTiles);
 
+  // callback
+}
+
+function mgrsToPath(mgrs) {
+  // [var a, var b] = mgrs.match(/[a-z]+|\d+/ig);
+  // console.log('A: ', a);
+  console.log('B: ', b);
 }
 
 function generateDownloadList(data, callback) {
@@ -72,26 +82,39 @@ function getProductTitle(entry) {
 
 // convert from bounds to polygon
 function boundsToPolygon(bounds) {
-  // console.log('boundsToPolygon()');
+  console.log('boundsToPolygon()');
+  console.log('BOUNDS: ', bounds);
   if(bounds.length < 0) {
     console.log('No points!');
     return null;
   }
   var points = [];
   var mgrsTiles = [];
-  for(point of bounds) {
+  for(var point of bounds) {
     points.push(`${point[0]} ${point[1]}`);
     getMgrsTile( [ point[0], point[1] ] );
     mgrsTiles.push(getMgrsTile(point).slice(0,5));
   }
-
   mgrsTiles = [ new Set(mgrsTiles) ];
-
   return 'POLYGON((' + points.join(', ') + '))';
 }
 
+// Take bounds and return a list of Mgrs tiles
+function boundsToMgrsTiles(bounds) {
+  if(bounds.length < 0) {
+    console.log('No points!');
+    return null;
+  }
+  var mgrsTiles = new Array();
+  for(let point of bounds) {
+    getMgrsTile( [ point[0], point[1] ] );
+    mgrsTiles.push(getMgrsTile(point).slice(0,5));
+  }
+  return Array.from( new Set(mgrsTiles) ); // remove any duplicates
+}
+
 function downloadFromList(list, callback) {
-  for(productTitle of list) {
+  for(let productTitle of list) {
     downloadFromS3(productTitle)
   }
 }
@@ -104,7 +127,6 @@ function downloadFromS3(title) {
   });
 
   // title = 'S2A_OPER_PRD_MSIL1C_PDMC_20160307T105355_R101_V20160214T232809_20160214T232809'
-  // console.log('BLAH: ', `zips/${title}`);
   // s3.listObjects( { EncodingType: 'url', Prefix: `zips/${title}.zip` }, function(err, data) {
   s3.listObjects( { EncodingType: 'url', Prefix: 'tiles/45/R/UL/', Delimiter: 'B02.jp2' }, function(err, data) {
     if (err) console.log(err, err.stack);
@@ -113,13 +135,6 @@ function downloadFromS3(title) {
       process.exit(0);
     }
   });
-
-
-
-  // s3.getObject({Key: title}, function(err, data) {
-  //   if (err) console.log(err, err.stack); // an error occurred
-  //   else     console.log(data);           // successful response
-  // });
 
 }
 

@@ -1,11 +1,18 @@
 'use strict';
-const AWS    = require('aws-sdk');
 // const utmObj = require('utm-latlng');
 const mgrs   = require('mgrs');
 const Client = require('node-rest-client').Client;
+const AWS    = require('aws-sdk');
+const fs     = require('fs');
+const async  = require('async');
 
-var auth = { user: process.env.SCIHUB_USER, password: process.env.SCIHUB_PASS };
-var client = new Client(auth);
+// AWS Parameters
+const bucket = 'sentinel-s2-l1c';
+const region = 'eu-central-1';
+const s3 = new AWS.S3({region: region});
+
+const auth = { user: process.env.SCIHUB_USER, password: process.env.SCIHUB_PASS };
+const client = new Client(auth);
 
 exports.fetchDataFromCopernicus = fetchDataFromCopernicus;
 exports.fetchDataFromSinergise  = fetchDataFromSinergise;
@@ -47,17 +54,128 @@ function fetchDataFromCopernicus(params, callback) {
 
 function fetchDataFromSinergise(bounds, callback) {
   console.log('Fetching data from Sinergise...');
-  var mgrsTiles = boundsToMgrsTiles(bounds);
+  let mgrsTiles = boundsToMgrsTiles(bounds);
   console.log('mgrsTiles = ', mgrsTiles);
+
+  for(let mgrsPosition of mgrsTiles) {
+    downloadTileImagesFromPosition(mgrsPosition);
+  }
 
   // callback
 }
 
-function mgrsToPath(mgrs) {
-  // [var a, var b] = mgrs.match(/[a-z]+|\d+/ig);
-  // console.log('A: ', a);
-  console.log('B: ', b);
+function downloadTileImagesFromPosition(mgrsPosition) {
+  console.log('downloadTileImagesFromPosition()');
+  let mgrs = splitMgrsPosition(mgrsPosition);
+
+  getTileInfoKeysAtPosition(mgrs, function(err, tileInfoKeys) {
+    let latestTileInfoKey = tileInfoKeys.sort().pop().Prefix;
+    console.log('Downloading latest tileInfo.json file...', latestTileInfoKey);
+    downloadFromS3(bucket, latestTileInfoKey, function(err, resp) {
+      if (err) console.log(err);
+      // get path to image files
+      let path = JSON.parse(resp.httpResponse.body).path;
+      downloadImagesFromS3(bucket, path);
+    });
+  });
 }
+
+function getTileInfoKeysAtPosition(mgrs, callback) {
+  console.log('getTileInfoKeysAtPosition()');
+
+  // Get list of available tileInfo.json files
+  let params = {
+    Bucket: bucket,
+    EncodingType: 'url',
+    Prefix: `tiles/${mgrs.gridZone}/${mgrs.latBand}/${mgrs.squareId}/`,
+    Delimiter: 'tileInfo.json'
+  }
+  s3.listObjects( params, function(err, data) {
+    // console.log('DATA: ', data);
+    if (err) callback(err);
+    callback(null, data.CommonPrefixes);
+  });
+}
+
+// Take bounds and return a list of Mgrs tiles
+function boundsToMgrsTiles(bounds) {
+  console.log('boundsToMgrsTiles()');
+  if(bounds.length < 0) {
+    console.log('No points!');
+    return null;
+  }
+  var mgrsTiles = new Array();
+  for(let point of bounds) {
+    let gridSquareId = mgrs.forward( [ point[0], point[1] ] ); // convert from lat/lng to grid square ID
+    mgrsTiles.push(gridSquareId.slice(0,5));
+  }
+  return Array.from( new Set(mgrsTiles) ); // remove any duplicates
+}
+
+// Note: Grid zones are designated by the UTM zone number, e.g. 45,
+// intersected by the latitude band letter, e.g R
+function splitMgrsPosition(mgrsPosition) {
+  // split MGRS position, e.g. '45RUL' into constituent parts
+  let str = mgrsPosition.match(/[a-z]+|\d+/ig)
+  let gridZone = str[0];            // 45
+  let latBand  = str[1].slice(0,1); // R
+  let squareId = str[1].slice(1);   // UL
+  return {gridZone, latBand, squareId}
+}
+
+function downloadImagesFromS3(bucket, path, callback) {
+  console.log('downloadImagesFromS3()', bucket, path);
+  let fileList = [
+    `${path}/B02.jp2`, // blue
+    `${path}/B03.jp2`, // green
+    `${path}/B04.jp2`, // red
+  ];
+
+  async.map(fileList, downloadFromS3.bind(null, bucket), function(err, result) {
+    if (err) { console.log(err); }
+    console.log('Finished downloading images.', result);
+    callback(null, result)
+  })
+}
+
+function test(bucket, key, callback) {
+  console.log('test()', bucket, key);
+}
+
+function downloadFromS3(bucket, key, callback) {
+  // console.log('downloadFromS3()', bucket, key);
+  let filename = key.replace(/\//g,'-');
+  // let file = fs.createWriteStream(`./data/${filename}`);
+  var file = require('fs').createWriteStream(`./data/${filename}`);
+  let req = s3.getObject({ Bucket: bucket, Key: key}); //.createReadStream().pipe(file);
+  req.on('httpData', function(chunk) { file.write(chunk); });
+  req.on('httpDone', function(resp) {
+    // console.log('resp: ', JSON.parse(resp.httpResponse.body) );
+    file.end();
+    console.log('Finished downloading %s', resp.request.params.Key);
+    callback(null, resp)
+  }).send();
+}
+
+// function getImageKeysAtPosition(mgrs, callback) {
+//   console.log('getImageKeysAtPosition()');
+//
+//   // Get list of available JP2s
+//   let params = {
+//     Bucket: bucket,
+//     EncodingType: 'url',
+//     Prefix: `tiles/${mgrs.gridZone}/${mgrs.latBand}/${mgrs.squareId}/`,
+//     Delimiter: '.jp2'
+//   }
+//   s3.listObjects( params, function(err, data) {
+//     console.log('DATA: ', data);
+//     if (err) callback(err);
+//     callback(null, data.CommonPrefixes);
+//   });
+// }
+
+
+/* COPERNICUS-SPECIFIC METHODS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
 
 function generateDownloadList(data, callback) {
   var downloadList = [];
@@ -74,70 +192,44 @@ function generateDownloadList(data, callback) {
   downloadFromList(downloadList, callback);
 }
 
-// process single tile entry
-function getProductTitle(entry) {
-  console.log('Processing entry: %s', entry.title);
-  return entry.title
+function downloadFromList(list, callback) {
+  for(let productTitle of list) {
+    console.log('I should download: %s', productTitle);
+    callback(null);
+    // downloadFromS3(productTitle)
+
+    // // Get list of available JP2s
+    // let params = {
+    //   Bucket: bucket,
+    //   EncodingType: 'url',
+    //   Prefix: `products/`,
+    //   Delimiter: ''
+    // }
+    // s3.listObjects( params, function(err, data) {
+    //   console.log('DATA: ', data);
+    //   if (err) callback(err);
+    //   callback(null, data.CommonPrefixes);
+    // });
+
+  }
 }
 
 // convert from bounds to polygon
 function boundsToPolygon(bounds) {
   console.log('boundsToPolygon()');
-  console.log('BOUNDS: ', bounds);
   if(bounds.length < 0) {
     console.log('No points!');
     return null;
   }
   var points = [];
-  var mgrsTiles = [];
   for(var point of bounds) {
     points.push(`${point[0]} ${point[1]}`);
-    getMgrsTile( [ point[0], point[1] ] );
-    mgrsTiles.push(getMgrsTile(point).slice(0,5));
   }
-  mgrsTiles = [ new Set(mgrsTiles) ];
   return 'POLYGON((' + points.join(', ') + '))';
 }
 
-// Take bounds and return a list of Mgrs tiles
-function boundsToMgrsTiles(bounds) {
-  if(bounds.length < 0) {
-    console.log('No points!');
-    return null;
-  }
-  var mgrsTiles = new Array();
-  for(let point of bounds) {
-    getMgrsTile( [ point[0], point[1] ] );
-    mgrsTiles.push(getMgrsTile(point).slice(0,5));
-  }
-  return Array.from( new Set(mgrsTiles) ); // remove any duplicates
-}
-
-function downloadFromList(list, callback) {
-  for(let productTitle of list) {
-    downloadFromS3(productTitle)
-  }
-}
-
-function downloadFromS3(title) {
-  console.log('Locating file ', title);
-  var s3 = new AWS.S3({
-    region: 'eu-central-1',
-    params: { Bucket: 'sentinel-s2-l1c' }
-  });
-
-  // title = 'S2A_OPER_PRD_MSIL1C_PDMC_20160307T105355_R101_V20160214T232809_20160214T232809'
-  // s3.listObjects( { EncodingType: 'url', Prefix: `zips/${title}.zip` }, function(err, data) {
-  s3.listObjects( { EncodingType: 'url', Prefix: 'tiles/45/R/UL/', Delimiter: 'B02.jp2' }, function(err, data) {
-    if (err) console.log(err, err.stack);
-    else {
-      console.log('DATA: ', data);
-      process.exit(0);
-    }
-  });
-
-}
-
-function getMgrsTile(point) {
-  return mgrs.forward(point);
+// process single tile entry
+function getProductTitle(entry) {
+  console.log('Processing entry: %s', entry.title);
+  return entry.title
 }

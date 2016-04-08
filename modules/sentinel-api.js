@@ -5,6 +5,9 @@ const Client = require('node-rest-client').Client;
 const AWS    = require('aws-sdk');
 const fs     = require('fs');
 const async  = require('async');
+const im     = require('imagemagick')
+
+createRGBComposite();
 
 // AWS Parameters
 const bucket = 'sentinel-s2-l1c';
@@ -58,13 +61,15 @@ function fetchDataFromSinergise(bounds, callback) {
   console.log('mgrsTiles = ', mgrsTiles);
 
   for(let mgrsPosition of mgrsTiles) {
-    downloadTileImagesFromPosition(mgrsPosition);
+    downloadTileImagesFromPosition(mgrsPosition, function(err, tileImages){
+      createRGBComposite();
+    });
   }
 
   // callback
 }
 
-function downloadTileImagesFromPosition(mgrsPosition) {
+function downloadTileImagesFromPosition(mgrsPosition, callback) {
   console.log('downloadTileImagesFromPosition()');
   let mgrs = splitMgrsPosition(mgrsPosition);
 
@@ -75,7 +80,10 @@ function downloadTileImagesFromPosition(mgrsPosition) {
       if (err) console.log(err);
       // get path to image files
       let path = JSON.parse(resp.httpResponse.body).path;
-      downloadImagesFromS3(bucket, path);
+      downloadImagesFromS3(bucket, path, function(err, result) {
+        if (err) { callback(err); }
+        callback(null);
+      });
     });
   });
 }
@@ -133,13 +141,9 @@ function downloadImagesFromS3(bucket, path, callback) {
 
   async.map(fileList, downloadFromS3.bind(null, bucket), function(err, result) {
     if (err) { console.log(err); }
-    console.log('Finished downloading images.', result);
+    console.log('Finished downloading images.');
     callback(null, result)
   })
-}
-
-function test(bucket, key, callback) {
-  console.log('test()', bucket, key);
 }
 
 function downloadFromS3(bucket, key, callback) {
@@ -155,6 +159,29 @@ function downloadFromS3(bucket, key, callback) {
     console.log('Finished downloading %s', resp.request.params.Key);
     callback(null, resp)
   }).send();
+}
+
+function createRGBComposite() {
+  console.log('createRGBComposite()');
+  fs.readdir('./data/', function(err,files) {
+      let r, g, b = '';
+      for(let file of files) {
+        console.log('FILE: ', file);
+        if(file.match(/B02.jp2$/i)) { b = './data/' + file; }
+        if(file.match(/B03.jp2$/i)) { g = './data/' + file; }
+        if(file.match(/B04.jp2$/i)) { r = './data/' + file; }
+      }
+      if(r == '' || g == '' || b == '') {
+        console.log('Error: Couldn\'nt generate composite image. Missing at least one color channel.');
+      } else {
+        console.log('Creating composite image...');
+        im.convert([ r, g, b, '-combine', '-normalize', 'data/composite.jpg' ] , function(err, strout) {
+          if (err) console.log(err);
+          console.log('Finished generating composite!');
+        });
+      }
+
+  });
 }
 
 // function getImageKeysAtPosition(mgrs, callback) {

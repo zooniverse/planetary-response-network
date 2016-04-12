@@ -1,13 +1,12 @@
 'use strict';
 // const utmObj = require('utm-latlng');
-const mgrs   = require('mgrs');
-const Client = require('node-rest-client').Client;
-const AWS    = require('aws-sdk');
-const fs     = require('fs');
-const async  = require('async');
-const im     = require('imagemagick')
-
-createRGBComposite();
+const mgrs        = require('mgrs');
+const Client      = require('node-rest-client').Client;
+const AWS         = require('aws-sdk');
+const fs          = require('fs');
+const async       = require('async');
+const im          = require('imagemagick');
+const tilizeImage = require('./tilize-image');
 
 // AWS Parameters
 const bucket = 'sentinel-s2-l1c';
@@ -58,11 +57,14 @@ function fetchDataFromCopernicus(params, callback) {
 function fetchDataFromSinergise(bounds, callback) {
   console.log('Fetching data from Sinergise...');
   let mgrsTiles = boundsToMgrsTiles(bounds);
-  console.log('mgrsTiles = ', mgrsTiles);
+  // console.log('mgrsTiles = ', mgrsTiles); // DEBUG
 
   for(let mgrsPosition of mgrsTiles) {
     downloadTileImagesFromPosition(mgrsPosition, function(err, tileImages){
-      createRGBComposite();
+      createRGBComposite(function(err, result) {
+        if(err) { callback(err); }
+        callback(null, result)
+      });
     });
   }
 
@@ -70,16 +72,19 @@ function fetchDataFromSinergise(bounds, callback) {
 }
 
 function downloadTileImagesFromPosition(mgrsPosition, callback) {
-  console.log('downloadTileImagesFromPosition()');
+  // console.log('downloadTileImagesFromPosition()'); // DEBUG
   let mgrs = splitMgrsPosition(mgrsPosition);
 
   getTileInfoKeysAtPosition(mgrs, function(err, tileInfoKeys) {
-    let latestTileInfoKey = tileInfoKeys.sort().pop().Prefix;
-    console.log('Downloading latest tileInfo.json file...', latestTileInfoKey);
+    console.log('Matched \'tileInfo.json\' files:\n', tileInfoKeys.map(function(data){
+      return data.Prefix;
+    }));
+    console.log('Using %s (hard-coded selection)', tileInfoKeys[tileInfoKeys.length-3].Prefix);
+    // Note: Currently hard-coded to get the third-latest image (for cloud-cover reasons)
+    let latestTileInfoKey = tileInfoKeys.sort()[tileInfoKeys.length-3].Prefix; // get latest images only
     downloadFromS3(bucket, latestTileInfoKey, function(err, resp) {
       if (err) console.log(err);
-      // get path to image files
-      let path = JSON.parse(resp.httpResponse.body).path;
+      let path = JSON.parse(resp.httpResponse.body).path; // get path to image files
       downloadImagesFromS3(bucket, path, function(err, result) {
         if (err) { callback(err); }
         callback(null);
@@ -89,8 +94,7 @@ function downloadTileImagesFromPosition(mgrsPosition, callback) {
 }
 
 function getTileInfoKeysAtPosition(mgrs, callback) {
-  console.log('getTileInfoKeysAtPosition()');
-
+  // console.log('getTileInfoKeysAtPosition()'); // DEBUG
   // Get list of available tileInfo.json files
   let params = {
     Bucket: bucket,
@@ -99,7 +103,6 @@ function getTileInfoKeysAtPosition(mgrs, callback) {
     Delimiter: 'tileInfo.json'
   }
   s3.listObjects( params, function(err, data) {
-    // console.log('DATA: ', data);
     if (err) callback(err);
     callback(null, data.CommonPrefixes);
   });
@@ -107,7 +110,7 @@ function getTileInfoKeysAtPosition(mgrs, callback) {
 
 // Take bounds and return a list of Mgrs tiles
 function boundsToMgrsTiles(bounds) {
-  console.log('boundsToMgrsTiles()');
+  // console.log('boundsToMgrsTiles()'); // DEBUG
   if(bounds.length < 0) {
     console.log('No points!');
     return null;
@@ -132,7 +135,7 @@ function splitMgrsPosition(mgrsPosition) {
 }
 
 function downloadImagesFromS3(bucket, path, callback) {
-  console.log('downloadImagesFromS3()', bucket, path);
+  // console.log('downloadImagesFromS3()', bucket, path); // DEBUG
   let fileList = [
     `${path}/B02.jp2`, // blue
     `${path}/B03.jp2`, // green
@@ -147,7 +150,7 @@ function downloadImagesFromS3(bucket, path, callback) {
 }
 
 function downloadFromS3(bucket, key, callback) {
-  // console.log('downloadFromS3()', bucket, key);
+  // console.log('downloadFromS3()', bucket, key); // DEBUG
   let filename = key.replace(/\//g,'-');
   // let file = fs.createWriteStream(`./data/${filename}`);
   var file = require('fs').createWriteStream(`./data/${filename}`);
@@ -161,12 +164,12 @@ function downloadFromS3(bucket, key, callback) {
   }).send();
 }
 
-function createRGBComposite() {
-  console.log('createRGBComposite()');
+function createRGBComposite(callback) {
+  // console.log('createRGBComposite()'); // DEBUG
   fs.readdir('./data/', function(err,files) {
       let r, g, b = '';
       for(let file of files) {
-        console.log('FILE: ', file);
+        // console.log('FILE: ', file);
         if(file.match(/B02.jp2$/i)) { b = './data/' + file; }
         if(file.match(/B03.jp2$/i)) { g = './data/' + file; }
         if(file.match(/B04.jp2$/i)) { r = './data/' + file; }
@@ -175,32 +178,15 @@ function createRGBComposite() {
         console.log('Error: Couldn\'nt generate composite image. Missing at least one color channel.');
       } else {
         console.log('Creating composite image...');
+        let outfilename = 'data/composite.jpg';
         im.convert([ r, g, b, '-combine', '-normalize', 'data/composite.jpg' ] , function(err, strout) {
           if (err) console.log(err);
-          console.log('Finished generating composite!');
+          callback(null, outfilename);
         });
       }
 
   });
 }
-
-// function getImageKeysAtPosition(mgrs, callback) {
-//   console.log('getImageKeysAtPosition()');
-//
-//   // Get list of available JP2s
-//   let params = {
-//     Bucket: bucket,
-//     EncodingType: 'url',
-//     Prefix: `tiles/${mgrs.gridZone}/${mgrs.latBand}/${mgrs.squareId}/`,
-//     Delimiter: '.jp2'
-//   }
-//   s3.listObjects( params, function(err, data) {
-//     console.log('DATA: ', data);
-//     if (err) callback(err);
-//     callback(null, data.CommonPrefixes);
-//   });
-// }
-
 
 /* COPERNICUS-SPECIFIC METHODS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
 

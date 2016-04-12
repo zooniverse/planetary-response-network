@@ -58,8 +58,12 @@ switch (argv.provider){
     }
 
     // sentinel.fetchDataFromCopernicus(params, function(downloadList) { // METHOD #1
-    sentinel.fetchDataFromSinergise(aoi.bounds, function(downloadList) { // METHOD #2
-      console.log('RESULT: ', downloadList);
+    sentinel.fetchDataFromSinergise(aoi.bounds, function(err, result) { // METHOD #2
+      if(err) {
+        console.log(err);
+        process.exit(1);
+      }
+      console.log('That\'s all folks!');
       process.exit(0);
     });
     break;

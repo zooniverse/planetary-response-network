@@ -1,11 +1,11 @@
-var os             = require('os')
-var fs             = require('fs')
-var im             = require('imagemagick')
-var path           = require('path')
-var gdal           = require('gdal')
-var async          = require('async')
-var imgMeta        = require('./image-meta')
-var geoCoords      = require('./geo-coords')
+var os        = require('os');
+var fs        = require('fs');
+var im        = require('imagemagick');
+var path      = require('path');
+var gdal      = require('gdal');
+var async     = require('async');
+var imgMeta   = require('./image-meta');
+var geoCoords = require('./geo-coords');
 
 /**
  * Splits an image into tiles
@@ -14,7 +14,7 @@ var geoCoords      = require('./geo-coords')
  * @param  {Number}   overlap  Amount by which to overlap tiles in x and y (in pixels)
  * @param  {Function} callback
  */
-function tilizeImage (filename, tileSize, overlap, callback){
+function tilizeImage (filename, tileSize, overlap, cornerCoords, callback){
   var tile_wid = tileSize;
   var tile_hei = tileSize;
   var step_x = 4 * tile_wid - overlap;
@@ -22,9 +22,12 @@ function tilizeImage (filename, tileSize, overlap, callback){
 
   var basename = path.basename(filename).split('.')[0]
   var dirname  = path.dirname(filename)
-  var ds = gdal.open(filename)
-  var metadata = geoCoords.getMetadata(ds)
-  var size = metadata.size
+
+  if(cornerCoords == null) {
+    var ds = gdal.open(filename)
+    var metadata = geoCoords.getMetadata(ds)
+    var size = metadata.size
+  }
 
   // Tile creator
   var create_tile_task = function (task, done) {

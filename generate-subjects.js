@@ -8,7 +8,7 @@ const Status        = require('./modules/status');
 // for Sentinel-2 data
 const utmObj   = require('utm-latlng');
 const mgrs     = require('mgrs');
-const sentinel = require('./modules/sentinel-api');
+const SentinelMosaic = require('./modules/sentinel-api-asClass');
 
 
 // Go
@@ -57,15 +57,26 @@ switch (argv.provider){
       platformname: 'Sentinel-2'
     }
 
-    // sentinel.fetchDataFromCopernicus(params, function(downloadList) { // METHOD #1
-    sentinel.fetchDataFromSinergise(aoi.bounds, function(err, result) { // METHOD #2
-      if(err) {
-        console.log(err);
-        process.exit(1);
-      }
-      console.log('That\'s all folks!');
-      process.exit(0);
+    // console.log('RUNNING...', params);
+    // require('./modules/sentinel-api').fetchDataFromCopernicus(params, function(err,result) {
+    // }); // METHOD #1
+
+    const sentinel = new SentinelMosaic(aoi, argv.project, argv.subjectSet, status);
+    sentinel.fetchData( function(err, result) {
+      sentinel.processData( function(err, result) {
+        if(err) throw err;
+        console.log('BACK', result);
+      });
     });
+
+    // sentinel.fetchDataFromSinergise(aoi.bounds, function(err, result) { // METHOD #2
+    //   if(err) {
+    //     console.log(err);
+    //     process.exit(1);
+    //   }
+    //   console.log('That\'s all folks!');
+    //   process.exit(0);
+    // });
     break;
   default:
     console.log('ERROR: Invalid provider \'%s\'', argv.provider);

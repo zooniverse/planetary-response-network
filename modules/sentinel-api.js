@@ -1,5 +1,4 @@
 'use strict';
-// const utmObj = require('utm-latlng');
 const mgrs        = require('mgrs');
 const Client      = require('node-rest-client').Client;
 const AWS         = require('aws-sdk');
@@ -7,6 +6,9 @@ const fs          = require('fs');
 const async       = require('async');
 const im          = require('imagemagick');
 const tilizeImage = require('./tilize-image');
+const utmObj      = require('utm-latlng');
+
+var utm = new utmObj();
 
 // AWS Parameters
 const bucket = 'sentinel-s2-l1c';
@@ -15,6 +17,7 @@ const s3 = new AWS.S3({region: region});
 
 const auth = { user: process.env.SCIHUB_USER, password: process.env.SCIHUB_PASS };
 const client = new Client(auth);
+
 
 exports.fetchDataFromCopernicus = fetchDataFromCopernicus;
 exports.fetchDataFromSinergise  = fetchDataFromSinergise;
@@ -60,15 +63,22 @@ function fetchDataFromSinergise(bounds, callback) {
   // console.log('mgrsTiles = ', mgrsTiles); // DEBUG
 
   for(let mgrsPosition of mgrsTiles) {
-    downloadTileImagesFromPosition(mgrsPosition, function(err, tileImages){
-      createRGBComposite(function(err, result) {
-        if(err) { callback(err); }
-        callback(null, result)
+    downloadTileImagesFromPosition(mgrsPosition, function(err, imgMeta){
+      createRGBComposite(function(err, filename) {
+        let cornerCorods = getCornerCoords(imgMeta.coords);
+        tilizeImage.tilize(tilename, 480, 160, cornerCoords, function(err,result) {
+          if(err) { callback(err); }
+          console.log('Finished tilizing images. ', result);
+        })
       });
     });
   }
 
   // callback
+}
+
+function getCornerCoords(coords) {
+  // utm.convertUtmToLatLng(easting, northing, zoneNum, zoneLetter);
 }
 
 function downloadTileImagesFromPosition(mgrsPosition, callback) {
@@ -84,10 +94,15 @@ function downloadTileImagesFromPosition(mgrsPosition, callback) {
     let latestTileInfoKey = tileInfoKeys.sort()[tileInfoKeys.length-3].Prefix; // get latest images only
     downloadFromS3(bucket, latestTileInfoKey, function(err, resp) {
       if (err) console.log(err);
-      let path = JSON.parse(resp.httpResponse.body).path; // get path to image files
+      let data = JSON.parse(resp.httpResponse.body);
+      let imgMeta = {
+        tileGeometry: data.tileGeometry.coordinates,
+        cloudyPixelPercentage: data.cloudyPixelPercentage
+      }
+      let path = data.path; // get path to image files
       downloadImagesFromS3(bucket, path, function(err, result) {
         if (err) { callback(err); }
-        callback(null);
+        callback(null, imgMeta);
       });
     });
   });
@@ -165,7 +180,7 @@ function downloadFromS3(bucket, key, callback) {
 }
 
 function createRGBComposite(callback) {
-  // console.log('createRGBComposite()'); // DEBUG
+  console.log('createRGBComposite()'); // DEBUG
   fs.readdir('./data/', function(err,files) {
       let r, g, b = '';
       for(let file of files) {

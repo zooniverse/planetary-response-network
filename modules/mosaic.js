@@ -59,8 +59,9 @@ class Mosaic {
       // Tile em up
       this.status.update('tilizing_mosaics', 'in-progress');
       var tasks = [];
+      var cornerCoords = null;
       for (var file of files) {
-        tasks.push(async.apply(tilizeImage.tilize, file, 480, 160));
+        tasks.push(async.apply(tilizeImage.tilize, file, 480, 160, cornerCoords));
       }
       async.series(tasks, (err, tilesByQuad) => {
         var mosaicTiles = [];

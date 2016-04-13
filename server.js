@@ -6,8 +6,6 @@ const yargs        = require('yargs')
 const path         = require('path')
 const fs           = require('fs')
 const https        = require('https')
-const session      = require('express-session')
-const RedisStore   = require('connect-redis')(session)
 const getBuilds    = require('./middleware/get-builds')
 const cors         = require('cors')
 
@@ -67,6 +65,12 @@ app.post('/aois', upload.single('file'), processAoi.runner({useQueue: argv.useQu
 
 // Builds route
 app.get('/builds', getBuilds);
+
+
+////////////////////////////////////////////////////////////////////
+require('./lib/auth')(app);
+////////////////////////////////////////////////////////////////////
+
 
 const port = process.env.PORT || 3736
 server.listen(port, function(error){

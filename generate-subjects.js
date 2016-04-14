@@ -8,7 +8,7 @@ const Status        = require('./modules/status');
 // for Sentinel-2 data
 const utmObj   = require('utm-latlng');
 const mgrs     = require('mgrs');
-const SentinelMosaic = require('./modules/sentinel-api-asClass');
+const Sentinel = require('./modules/sentinel-api');
 
 
 // Go
@@ -51,17 +51,13 @@ switch (argv.provider){
     break;
   case 'sentinel-2':
     console.log('Using mosaic provider \'%s\'', argv.provider);
-    var params = {
-      bounds: aoi.bounds,
-      cloudcoverpercentage: '[0 TO 50]',
-      platformname: 'Sentinel-2'
-    }
 
-    // console.log('RUNNING...', params);
+    // /* USE COPERNICUS API */
+    // var params = { bounds: aoi.bounds, cloudcoverpercentage: '[0 TO 50]', platformname: 'Sentinel-2' };
     // require('./modules/sentinel-api').fetchDataFromCopernicus(params, function(err,result) {
     // }); // METHOD #1
 
-    const sentinel = new SentinelMosaic(aoi, argv.project, argv.subjectSet, status);
+    const sentinel = new Sentinel(aoi, argv.project, argv.subjectSet, status);
     sentinel.fetchData( function(err, result) {
       sentinel.processData( function(err, result) {
         if(err) throw err;
@@ -70,14 +66,6 @@ switch (argv.provider){
       });
     });
 
-    // sentinel.fetchDataFromSinergise(aoi.bounds, function(err, result) { // METHOD #2
-    //   if(err) {
-    //     console.log(err);
-    //     process.exit(1);
-    //   }
-    //   console.log('That\'s all folks!');
-    //   process.exit(0);
-    // });
     break;
   default:
     console.log('ERROR: Invalid provider \'%s\'', argv.provider);

@@ -88,10 +88,14 @@ class GridSquare {
       } else {
         let outfilename = `${this.path}/composite.jpg`;
         im.convert([ r, g, b, '-combine', '-normalize', outfilename ] , function(err, strout) {
-          if(err) throw err;
           console.log('finished running convert');
-          callback(null, outfilename);
-        });
+          im.identify(outfilename, function(err, features) {
+            this.imgMeta.width = features.width;
+            this.imgMeta.height = features.height;
+            if(err) throw err;
+            callback(null, outfilename);
+          }.bind(this));
+        }.bind(this));
       }
     }.bind(this));
   }
@@ -198,8 +202,15 @@ class SentinelMosaic {
   processData(callback) {
     async.forEachOf(this.gridSquares, function(gridSquare, i, callback) {
       gridSquare.createRGBComposite( function(err,imgFilename) {
-        // console.log('COMPOSITE FILE = ', imgFilename);
-        // tilizeImage.tilize()
+        let params = {
+          cornerCoords: gridSquare.getCornerCoords(),
+          width: gridSquare.imgMeta.width,
+          height: gridSquare.imgMeta.height
+        };
+        tilizeImage.tilize(imgFilename, 480, 160, params, function(err,result) {
+          if(err) throw err;
+          callback(null, result);
+        });
         // console.log('Corner Coords = ', gridSquare.getCornerCoords() );
         // if(err) throw err;
         // callback(null);

@@ -14,7 +14,7 @@ var geoCoords = require('./geo-coords');
  * @param  {Number}   overlap  Amount by which to overlap tiles in x and y (in pixels)
  * @param  {Function} callback
  */
-function tilizeImage (filename, tileSize, overlap, cornerCoords, callback){
+function tilizeImage (filename, tileSize, overlap, params, callback){
   var tile_wid = tileSize;
   var tile_hei = tileSize;
   var step_x = 4 * tile_wid - overlap;
@@ -23,10 +23,12 @@ function tilizeImage (filename, tileSize, overlap, cornerCoords, callback){
   var basename = path.basename(filename).split('.')[0]
   var dirname  = path.dirname(filename)
 
-  if(cornerCoords == null) {
+  if(params == null) {
     var ds = gdal.open(filename)
     var metadata = geoCoords.getMetadata(ds)
     var size = metadata.size
+  } else {
+    var size = {x: params.width, y: params.height};
   }
 
   // Tile creator
@@ -42,12 +44,15 @@ function tilizeImage (filename, tileSize, overlap, cornerCoords, callback){
     var extent_option = tile_wid + 'x' + tile_hei
 
     /* Convert corner and center pixel coordinates to geo */
-    var coords = {
-      upper_left   : geoCoords.pxToWgs84(ds, offset_x,                offset_y),
-      upper_right  : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y),
-      bottom_right : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y + tile_hei),
-      bottom_left  : geoCoords.pxToWgs84(ds, offset_x,                offset_y + tile_hei),
-      center       : geoCoords.pxToWgs84(ds, offset_x + tile_wid / 2, offset_y + tile_hei / 2)
+    var coords = {};
+    if(params == null) {
+      coords = {
+        upper_left   : geoCoords.pxToWgs84(ds, offset_x,                offset_y),
+        upper_right  : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y),
+        bottom_right : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y + tile_hei),
+        bottom_left  : geoCoords.pxToWgs84(ds, offset_x,                offset_y + tile_hei),
+        center       : geoCoords.pxToWgs84(ds, offset_x + tile_wid / 2, offset_y + tile_hei / 2)
+      }
     }
 
     // Should we -normalize each tile?

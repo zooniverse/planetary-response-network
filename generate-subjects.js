@@ -65,6 +65,7 @@ switch (argv.provider){
     sentinel.fetchData( function(err, result) {
       sentinel.processData( function(err, result) {
         if(err) throw err;
+        console.log('RESULT: ', result);
         process.exit(0);
       });
     });

@@ -200,25 +200,39 @@ class SentinelMosaic {
   }
 
   processData(callback) {
-    async.forEachOf(this.gridSquares, function(gridSquare, i, callback) {
-      gridSquare.createRGBComposite( function(err,imgFilename) {
+    console.log('processData()');
+    async.map(this.gridSquares, function(item, callback){
+      item.createRGBComposite( function(err,imgFilename) {
         let params = {
-          cornerCoords: gridSquare.getCornerCoords(),
-          width: gridSquare.imgMeta.width,
-          height: gridSquare.imgMeta.height
+          cornerCoords: item.getCornerCoords(),
+          width: item.imgMeta.width,
+          height: item.imgMeta.height
         };
         tilizeImage.tilize(imgFilename, 480, 160, params, function(err,result) {
           if(err) throw err;
           callback(null, result);
         });
-        // console.log('Corner Coords = ', gridSquare.getCornerCoords() );
-        // if(err) throw err;
-        // callback(null);
       });
-    }, function(err) {
+    }, function(err, results) {
       if(err) throw err;
-      callback(null);
+      callback(null, results);
     });
+    // async.forEachOf(this.gridSquares, function(gridSquare, i, callback) {
+    //   gridSquare.createRGBComposite( function(err,imgFilename) {
+    //     let params = {
+    //       cornerCoords: gridSquare.getCornerCoords(),
+    //       width: gridSquare.imgMeta.width,
+    //       height: gridSquare.imgMeta.height
+    //     };
+    //     tilizeImage.tilize(imgFilename, 480, 160, params, function(err,result) {
+    //       if(err) throw err;
+    //       console.log('DBKJSD RESULT = ', result);
+    //       callback(null, result);
+    //     });
+    //     console.log('BKJLHKSJDHSKLJHD');
+    //   });
+    // });
+
   }
 
   // Take bounds and return a list of Mgrs tiles

@@ -15,6 +15,7 @@ const argv = yargs
   .describe('mosaics',       'Space-separated urls of mosaics to use')
   .describe('project',       'ID of target project')
   .describe('subject-set',   'ID of target subject set')
+  .describe('user-id',       'ID of Panoptes user to run job as')
   .default('provider',       'planet-api')
   .choices('provider',       ['planet-api'])
   .demand([

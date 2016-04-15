@@ -1,13 +1,15 @@
-const processAoi   = require('./middleware/process-aoi')
-const express      = require('express')
-const morgan       = require('morgan')
-const multer       = require('multer')
-const yargs        = require('yargs')
-const path         = require('path')
-const fs           = require('fs')
-const https        = require('https')
-const getBuilds    = require('./middleware/get-builds')
-const cors         = require('cors')
+const processAoi     = require('./middleware/process-aoi')
+const express        = require('express')
+const morgan         = require('morgan')
+const multer         = require('multer')
+const yargs          = require('yargs')
+const path           = require('path')
+const fs             = require('fs')
+const https          = require('https')
+const cors           = require('cors')
+const ensureLogin    = require('./middleware/ensure-login')
+const getBuilds      = require('./middleware/get-builds')
+const panoptesProxy  = require('./middleware/panoptes-proxy')
 
 // Parse options
 const argv = yargs
@@ -29,7 +31,7 @@ const app = express()
 
 // Enable CORS - TODO restrict to trusted origin URLs
 app.use(cors({
-  origin: '*',
+  origin: 'https://localhost:3443',
   credentials: true
 }))
 
@@ -57,20 +59,20 @@ redis.on('pmessage', function (channel, pattern, message) {
 });
 
 const upload = multer({ dest: path.join(__dirname, './uploaded_aois') })
-
 app.use(morgan('combined'))
-
-// Handle AOI uploads
-app.post('/aois', upload.single('file'), processAoi.runner({useQueue: argv.useQueue} ))
-
-// Builds route
-app.get('/builds', getBuilds);
-
 
 ////////////////////////////////////////////////////////////////////
 require('./lib/auth')(app);
 ////////////////////////////////////////////////////////////////////
 
+// Handle AOI uploads
+app.post('/aois', ensureLogin, upload.single('file'), processAoi.runner({useQueue: argv.useQueue} ))
+
+// Builds route
+app.get('/builds', ensureLogin, getBuilds)
+
+// Proxy panoptes calls
+app.get('/projects', ensureLogin, panoptesProxy.getProjects)
 
 const port = process.env.PORT || 3736
 server.listen(port, function(error){

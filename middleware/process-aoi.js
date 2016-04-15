@@ -36,7 +36,7 @@ exports.runner = function (options){
           if (err) return next(err)
           // Add job id to user's job list
           // TODO get oauth working so we know which user this is
-          redis.rpush('user:USER_ID_HERE:jobs', job_ids, (err, status) => {
+          redis.rpush('user:'+req.user.get('id')+':jobs', job_ids, (err, status) => {
             if (err) return next(err)
             res.redirect(redirect_uri)
           })
@@ -57,6 +57,7 @@ exports.runner = function (options){
           'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/',
         '--project', project_id,
         '--subject-set', subject_set_id,
+        '--user-id', req.user.id,
         aoi_file
       ])
     }

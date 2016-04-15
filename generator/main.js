@@ -37,6 +37,7 @@ function generateSubjects (task, done) {
       'https://api.planet.com/v0/mosaics/color_balance_mosaic/quads/',
     '--project', task.project_id,
     '--subject-set', task.subject_set_id,
+    '--user-id', task.user_id,
     task.aoi_file
   ])
 

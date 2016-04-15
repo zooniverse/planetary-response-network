@@ -21,7 +21,8 @@ exports.runner = function (options){
       var jobInfo = {
         aoi_file: path.join(UPLOAD_PATH, req.file.filename),
         project_id: project_id,
-        subject_set_id: subject_set_id
+        subject_set_id: subject_set_id,
+        user_id: req.user.get('id')
       }
       // Send job to redis queue
       queue.push(jobInfo, repeat, interval, function(err, job_ids) {

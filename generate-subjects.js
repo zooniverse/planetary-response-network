@@ -6,6 +6,7 @@ const Manifest      = require('./modules/manifest');
 const Status        = require('./modules/status');
 const redis         = require('./lib/redis');
 const redisPubSub   = require('./lib/redis-pubsub');
+const User          = require('./lib/user-model');
 
 // Go
 const argv = yargs
@@ -42,16 +43,22 @@ const mosaics = argv.mosaics.map((mosaic, i) => {
   return new Mosaic(argv.provider, 'image' + (i + 1), mosaic, status);
 });
 
-// Create and upload subjects
-const manifest = new Manifest(mosaics, aoi, argv.project, argv.subjectSet, status);
+// Get user
+User.find(argv.userId, (err, user) => {
+  if (err) throw err;
 
-manifest.deploy((err, result) => {
-  if (err) {
-    console.error(err);
-    process.exit(1);
-  } else {
-    status.update('finished', 'done');
-    console.log('Finished uploading subjects.');
-    process.exit(0);
-  }
-});
+  // Create and upload subjects
+  const manifest = new Manifest(mosaics, aoi, argv.project, argv.subjectSet, status, user);
+
+  manifest.deploy((err, result) => {
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    } else {
+      status.update('finished', 'done');
+      console.log('Finished uploading subjects.');
+      process.exit(0);
+    }
+  });
+})
+

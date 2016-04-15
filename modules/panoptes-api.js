@@ -21,16 +21,14 @@ function saveSubject(subject, callback) {
     })
 }
 
-function saveSubjects(subjects, callback){
-  var auth = panoptesClient.auth
-  var credentials = {
-    login: process.env.ZOONIVERSE_USERNAME,
-    password: process.env.ZOONIVERSE_PASSWORD
-  };
+function saveSubjects(user, subjects, callback){
+  // Inject our access token into api client
+  api.headers.Authorization = 'Bearer ' + user.get('accessToken')
 
   // api.update({'params.admin': true});  // careful when using admin mode!
-  auth.signIn(credentials).then(function(user){
-    // console.log('Signed in user: ', user);
-    async.eachSeries(subjects, saveSubject, callback)
-  });
+  async.eachSeries(subjects, saveSubject, (err, result) => {
+    // Clear access token
+    api.headers.Authorization = null
+    callback(err, result)
+  })
 }

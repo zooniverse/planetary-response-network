@@ -17,8 +17,8 @@ var geoCoords = require('./geo-coords');
 function tilizeImage (filename, tileSize, overlap, params, callback){
   var tile_wid = tileSize;
   var tile_hei = tileSize;
-  var step_x = 4 * tile_wid - overlap;
-  var step_y = 4 * tile_hei - overlap;
+  var step_x = tile_wid - overlap;
+  var step_y = tile_hei - overlap;
 
   var basename = path.basename(filename).split('.')[0]
   var dirname  = path.dirname(filename)
@@ -58,7 +58,9 @@ function tilizeImage (filename, tileSize, overlap, params, callback){
     // Should we -normalize each tile?
     // PRO: Ensures contrast is stretched if images are too dark or washed out
     // CON: May take longer to process?
-    im.convert([ filename + '[0]', '-crop', crop_option, '-normalize', '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
+    // Note: -equalize works well to redistribute the histogram when there's lots of cloud cover
+    console.log('NOTE: Running \'convert\' with -equalize option.');
+    im.convert([ filename + '[0]', '-crop', crop_option, '-equalize', '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
       if (err) return done(err)
       imgMeta.write(outfilename, '-userComment', coords, done)  // write coordinates to tile image metadata
     })

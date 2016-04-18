@@ -194,7 +194,7 @@ class SentinelMosaic {
 
   processData(callback) {
     console.log('processData()');
-    async.map(this.gridSquares, function(item, callback){
+    async.mapSeries(this.gridSquares, function(item, callback){
       item.createRGBComposite( function(err,imgFilename) {
         let params = {
           cornerCoords: item.getCornerCoords(),

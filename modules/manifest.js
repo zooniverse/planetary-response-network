@@ -1,10 +1,12 @@
 'use strict';
 
-const async = require('async');
+const async        = require('async');
 const csvStringify = require('csv-stringify');
-const imgMeta = require('./image-meta');
-const panoptesAPI = require('./panoptes-api');
-const uploadToS3 = require('./upload-to-s3');
+const fs           = require('fs');
+const imgMeta      = require('./image-meta');
+const panoptesAPI  = require('./panoptes-api');
+const uploadToS3   = require('./upload-to-s3');
+const path         = require('path');
 
 class Manifest {
 
@@ -26,7 +28,28 @@ class Manifest {
   /**
    * Generates the manifest subjects, each with one image from each mosaic. This assumes that the tiles in each mosaic are in order and of the same geographic region
    * @param  {Function}  callback
+   * @returns {Object[]}  subjects - Metadata from subjects
+   * @returns {Object}    subjects[].metadata
+   * @returns {Object}    subjects[].metadata.upper_left
+   * @returns {Number}    subjects[].metadata.upper_left.lon - Longitude value
+   * @returns {Number}    subjects[].metadata.upper_left.lat - Latitude value
+   * @returns {Object}    subjects[].metadata.upper_right
+   * @returns {Number}    subjects[].metadata.upper_right.lon - Longitude value
+   * @returns {Number}    subjects[].metadata.upper_right.lat - Latitude value
+   * @returns {Object}    subjects[].metadata.bottom_right
+   * @returns {Number}    subjects[].metadata.bottom_right.lon - Longitude value
+   * @returns {Number}    subjects[].metadata.bottom_right.lat - Latitude value
+   * @returns {Object}    subjects[].metadata.bottom_left
+   * @returns {Number}    subjects[].metadata.bottom_left.lon - Longitude value
+   * @returns {Number}    subjects[].metadata.bottom_left.lat - Latitude value
+   * @returns {Object[]}  subjects[].metadata.locations
+   * @returns {String}    subjects[].metadata.locations[].image_uri - URI to image asset
+   * @returns {Object}    subjects[].metadata.links
+   * @returns {Number}    subjects[].metadata.links.project - Zooniverse project id
+   * @returns {Array}     subjects[].metadata.links.subject_sets
+   * @returns {Number}    subjects[].metadata.links.subject_sets[].subject_set_id - Zooniverse subject set id
    */
+
   getSubjects(callback) {
     // Fetch and tile imagery from mosaics
     async.mapSeries(this.mosaics, (mosaic, callback) => {
@@ -45,8 +68,46 @@ class Manifest {
         i++;
       }
       async.series(tasks, (err, subjects) => {
+        this.generateManifest(subjects);
         callback(err, subjects);
       });
+    });
+  }
+
+  /**
+   * Generates a CSV manifest for manual uploads via PFE
+   */
+  generateManifest(subjects, callback) {
+    console.log('Generating manifest...'); // --STI
+    let csvData = [],
+        maxLocations = 0,
+        outputPath = '';
+    for(let subject of subjects) {
+      maxLocations = subject.locations.length;
+      outputPath = path.dirname( subject.locations[0]['image/jpeg'] );
+      csvData.push([
+        ...[...subject.locations].map( (location) => path.basename( location['image/jpeg'] ) ),
+        subject.metadata.upper_left.lon,
+        subject.metadata.upper_left.lat,
+        subject.metadata.upper_right.lon,
+        subject.metadata.upper_right.lat,
+        subject.metadata.bottom_right.lon,
+        subject.metadata.bottom_right.lat,
+        subject.metadata.bottom_left.lon,
+        subject.metadata.bottom_left.lat,
+        subject.metadata.center.lon,
+        subject.metadata.center.lat
+      ]);
+    }
+
+    let imageLabels = [];
+    for(let i=0; i<maxLocations; i++) {
+      imageLabels.push(`image${i+1}`);
+    }
+    csvData.splice(0, 0, [ ...imageLabels, 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ] );
+    // callback(csvData, null);
+    csvStringify(csvData, function(error, stringifiedData) {
+      fs.writeFile(`${outputPath}/manifest.csv`, stringifiedData);
     });
   }
 
@@ -87,6 +148,7 @@ class Manifest {
   }
 
   deploySubjectsToPanoptes(subjects, callback) {
+    console.log('Deploying subjects to Panoptes...'); // --STI
     this.status.update('deploying_subjects', 'in-progress');
     panoptesAPI.saveSubjects(subjects, function(err, callback){
       if(err) {

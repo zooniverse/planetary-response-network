@@ -46,7 +46,6 @@ const mosaics = argv.mosaics.map((mosaic, i) => {
 // Get user
 User.find(argv.userId, (err, user) => {
   if (err) throw err;
-
   // Create and upload subjects
   const manifest = new Manifest(mosaics, aoi, argv.project, argv.subjectSet, status, user);
 
@@ -61,4 +60,3 @@ User.find(argv.userId, (err, user) => {
     }
   });
 })
-

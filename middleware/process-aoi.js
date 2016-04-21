@@ -58,7 +58,7 @@ exports.runner = function (options){
           'https://api.planet.com/v0/mosaics/open_california_re_20141201_20150228/quads/',
         '--project', project_id,
         '--subject-set', subject_set_id,
-        '--user-id', req.user.id,
+        '--user-id', req.user.get('id'),
         aoi_file
       ])
     }

@@ -36,7 +36,6 @@ exports.runner = function (options){
         }, (err, jobs) => {
           if (err) return next(err)
           // Add job id to user's job list
-          // TODO get oauth working so we know which user this is
           redis.rpush('user:'+req.user.get('id')+':jobs', job_ids, (err, status) => {
             if (err) return next(err)
             res.redirect(redirect_uri)

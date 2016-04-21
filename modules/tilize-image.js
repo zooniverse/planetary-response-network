@@ -82,7 +82,26 @@ function tilizeImage (filename, tileSize, overlap, callback){
   } // end outer for loop
 }
 
+/**
+ * Tilizes a set of images into a flat list of tiles. Assumes the source files are of the exactly same geographic bounds (i.e. same space, different time)
+ * @param {Array<String>}  files
+ * @param {Function}       callback
+ */
+function tilizeImages(files, callback) {
+  var tasks = [];
+  for (var file of files) {
+    tasks.push(async.apply(tilizeImage, file, 480, 160));
+  }
+  async.series(tasks, (err, tilesBySrc) => {
+    var allTiles = [];
+    for (var tiles of tilesBySrc) {
+      allTiles = allTiles.concat(tiles);
+    }
+    callback(err, allTiles.sort());
+  });
+}
 
 module.exports = {
-  tilize: tilizeImage
+  tilize: tilizeImage,
+  tilizeMany: tilizeImages
 };

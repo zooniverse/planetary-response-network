@@ -10,7 +10,7 @@ const User          = require('./lib/user-model');
 
 // Go
 const argv = yargs
-  .usage('$0 [options] <kml_file>')
+  .usage('$0 [options] <file>')
   .describe('job-id',        'Unique job identifier')
   .describe('provider',      'Tile provider to use')
   .describe('mosaics',       'Space-separated urls of mosaics to use')
@@ -19,39 +19,62 @@ const argv = yargs
   .describe('project',       'ID of target project')
   .describe('subject-set',   'ID of target subject set')
   .describe('user-id',       'ID of Panoptes user to run job as')
-  .default('provider',       'planet-api')
-  .choices('provider',       ['planet-api'])
   .default('tile-size', 480)
   .default('tile-overlap', 160)
+  .choices('provider',       ['planet-api', 'file'])
+  .default('provider',       'planet-api')
+  .implies('mosaics', 'aoi')
+  .implies('aoi', 'mosaics')
   .demand([
-      'project',
-      'subject-set'
+    'project',
+    'subject-set'
   ])
   .array('mosaics')
-  .demand(1)
+  .array('images')
+  .check(argv => {
+    return !argv.mosaics || (argv.mosaics && !argv.images)
+  })
   .argv;
 
 console.log('ARGV = ', argv);
 
-// Load AOI
-const file = argv._[0];
-console.log('Loading AOI from KML file', file);
-const aoi = new AOI(file);
+let aoi;
+if (argv.provider !== 'file') {
+  // Load AOI
+  const file = argv._[0];
+  aoi = new AOI(file);
+  console.log('Loading AOI from KML file', file);
+}
 const manifestFile = 'data/'+new Date().getTime()+'.csv';
 
 // Instantiate script status tracker
 const status = new Status(argv.jobId);
 
-// Create mosaic instances from provided URLs
-const mosaics = argv.mosaics.map((mosaic, i) => {
-  return new Mosaic(argv.provider, 'image' + (i + 1), mosaic, status, argv.tileSize, argv.tileOverlap);
-});
+let mosaics;
+if (argv.provider !== 'file') {
+  // Create mosaic instances from provided URLs
+  mosaics = argv.mosaics.map((mosaic, i) => {
+    return new Mosaic(argv.provider, 'image' + (i + 1), mosaic, status, argv.tileSize, argv.tileOverlap);
+  });
+}
 
 // Get user
 User.find(argv.userId, (err, user) => {
   if (err) throw err;
   // Create and upload subjects
-  const manifest = new Manifest(mosaics, aoi, argv.project, argv.subjectSet, status, user);
+  let args = {
+    projectId: argv.project,
+    subjectSetId: argv.subjectSet,
+    status: status,
+    user: user
+  }
+  if (argv.provider === 'file') {
+    args.images = argv.images;
+  } else {
+    args.mosaics = mosaics;
+    args.aoi = aoi;
+  }
+  const manifest = new Manifest(args);
 
   manifest.deploy((err, result) => {
     if (err) {

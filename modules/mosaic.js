@@ -60,17 +60,14 @@ class Mosaic {
 
       // Tile em up
       this.status.update('tilizing_mosaics', 'in-progress');
-      var tasks = [];
-      for (var file of files) {
-        tasks.push(async.apply(tilizeImage.tilize, file, this.tileSize, this.tileOverlap));
-      }
-      async.series(tasks, (err, tilesByQuad) => {
-        var mosaicTiles = [];
-        for (var tiles of tilesByQuad) {
-          mosaicTiles = mosaicTiles.concat(tiles);
+      tilizeImage.tilizeMany(files, (err, tiles) => {
+        if (err) {
+          this.status.update('tilizing_mosaics', 'error');
+          callback(err);
+        } else {
+          this.status.update('tilizing_mosaics', 'done');
+          callback(null, tiles);
         }
-        this.status.update('tilizing_mosaics', 'done');
-        callback(err, mosaicTiles.sort());
       });
     });
   }

@@ -2,27 +2,39 @@
 
 const async = require('async');
 const csvStringify = require('csv-stringify');
-const imgMeta = require('./image-meta');
+const createSubjects = require('./create-subjects');
 const panoptesAPI = require('./panoptes-api');
 const uploadToS3 = require('./upload-to-s3');
+const tilizeImage = require('./tilize-image');
 
 class Manifest {
 
   /**
    * @classdesc Manifests are responsible for generating subjects from mosaic files and uploading them to Panoptes
-   * @param  {Array<Mosaic>}         mosaics        List of mosaics included in the manifest
-   * @param  {Aoi}                   aoi            An area of interest to use
-   * @param  {Number}                projectId      Id of Panoptes project to which subjects should be sent
-   * @param  {Number}                subjectSetId   Id of Panoptes subject set to which subjects should be sent
-   * @param  {User}                  user           User running the job
+   * @param  {Object}                options
+   * @param  {Array<Mosaic>}         options.mosaics        List of mosaics included in the manifest
+   * @param  {Aoi}                   options.aoi            An area of interest to use
+   * @param  {Array<String>}         options.images         List of image filenames to use as source files instead of fetching from an API
+   * @param  {Number}                options.projectId      Id of Panoptes project to which subjects should be sent
+   * @param  {Number}                options.subjectSetId   Id of Panoptes subject set to which subjects should be sent
+   * @param  {User}                  options.user           User running the job
    */
-  constructor(mosaics, aoi, projectId, subjectSetId, status, user) {
-    this.mosaics = mosaics;
-    this.aoi = aoi;
-    this.projectId = projectId;
-    this.subjectSetId = subjectSetId;
-    this.status = status;
-    this.user = user;
+  constructor(options) {
+    // Ensure valid combination of options
+    if (options.mosaics && !options.aoi || options.aoi && !options.mosaics) {
+      throw new Error('If creating subjects from mosaics, you must provide an area of interest, and vice-versa');
+    } else if (!options.projectId || !options.subjectSetId || !options.user || !options.status) {
+      throw new Error('You must supply a project id, subject set id, user object and status instance');
+    } else if (options.mosaics && options.aoi && options.images) {
+      throw new Error('Specify either a mosaic with area of interest, or a list of source images, but not both!')
+    }
+    this.mosaics = options.mosaics;
+    this.aoi = options.aoi;
+    this.projectId = options.projectId;
+    this.subjectSetId = options.subjectSetId;
+    this.status = options.status;
+    this.user = options.user;
+    this.images = options.images;
   }
 
   /**
@@ -30,53 +42,30 @@ class Manifest {
    * @param  {Function}  callback
    */
   getSubjects(callback) {
-    // Fetch and tile imagery from mosaics
-    async.mapSeries(this.mosaics, (mosaic, callback) => {
-      mosaic.createTilesForAOI(this.aoi, callback);
-    }, (err, filesByMosaic) => {
-      if (err) throw err;
-      var tasks = [];
-      var fileSets = [];
-      for (var i = 0; i < filesByMosaic[0].length; i++) {
-        let fileSet = [];
-        for (var mosaicFiles of filesByMosaic) {
-          fileSet.push(mosaicFiles[i]);
-        }
-        fileSets.push(fileSet);
-        tasks.push(async.apply(this.getSubject.bind(this), fileSet));
-        i++;
-      }
-      async.series(tasks, (err, subjects) => {
-        callback(err, subjects);
-      });
-    });
-  }
-
-  /**
-   * Generates a subject from a set of files
-   * @param  {Array<String>}  fileSet
-   * @param  {Function}       callback
-   */
-  getSubject(fileSet, callback) {
-    imgMeta.read(fileSet[0], ['-userComment'], (err, metadata) => {
-      if (err) return callback(err);
-
-      try {
-        var subject = {
-          metadata: JSON.parse(decodeURIComponent(metadata["userComment"]))
-        };
-        subject.locations = this.mosaics.map((mosaic, i) => {
-          return { 'image/jpeg': fileSet[i] }
+    const handler = (err, tileSets) => {
+      this.status.update('tilizing_mosaics', 'done');
+      createSubjects.subjectsFromTileSets(tileSets, (err, subjects) => {
+        if (err) return callback(err);
+        subjects = subjects.map(subject => {
+          subject.links = {
+            project: this.projectId,
+            subject_sets: [this.subjectSetId]
+          };
+          return subject;
         });
-        subject.links = {
-          project: this.projectId,
-          subject_sets: [this.subjectSetId]
-        };
-        callback(null, subject);
-      } catch (e) {
-        callback(e);
-      }
-    })
+        callback(null, subjects)
+      });
+    }
+
+    if (this.images) {
+      // Tile provided imagery
+      tilizeImage.tilizeMany(this.images, handler);
+    } else {
+      // Fetch and tile imagery from mosaics
+      async.mapSeries(this.mosaics, (mosaic, callback) => {
+        mosaic.createTilesForAOI(this.aoi, callback);
+      }, handler);
+    }
   }
 
   deploy(callback) {

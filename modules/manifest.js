@@ -103,7 +103,8 @@ class Manifest {
   }
 
   uploadSubjectImagesToS3(subject, callback){
-    async.series(this.mosaics.map((mosaic, i) => {
+    let items = this.mosaics || this.images;
+    async.series(items.map((item, i) => {
       const img = subject.locations[i]['image/jpeg'];
       return async.apply( uploadToS3, img, img, process.env.AMAZON_S3_BUCKET );
     }), function(err, results) {

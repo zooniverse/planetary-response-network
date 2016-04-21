@@ -52,7 +52,7 @@ function getMetadata (dsOrFilename) {
 		// convert pixel x,y to the coordinate system of the raster
 		// then transform it to WGS84
 		var corner = corners[corner_name]
-		coordinates[corner_name] = pxToWgs84(ds, corner)
+		coordinates[corner_name] = pxToWgs84(ds, corner.x, corner.y)
 	});
 
 	return { size: size, reference_coordinates: coordinates }

@@ -6,7 +6,6 @@ const queue  = require('../lib/queue')
 const redis  = require('../lib/redis')
 
 const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
-const redirect_uri = 'https://localhost:3443/builds'
 
 exports.runner = function (options){
   return function (req, res, next) {
@@ -15,6 +14,7 @@ exports.runner = function (options){
     var subject_set_id = req.body.subject_set_id
     var repeat = req.body.repeat
     var interval = req.body.interval
+    var redirect_uri = req.query.redirect
 
     if (options.useQueue) {
       // Create job data

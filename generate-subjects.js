@@ -4,6 +4,9 @@ const AOI           = require('./modules/aoi');
 const Mosaic        = require('./modules/mosaic');
 const Manifest      = require('./modules/manifest');
 const Status        = require('./modules/status');
+const redis         = require('./lib/redis');
+const redisPubSub   = require('./lib/redis-pubsub');
+const User          = require('./lib/user-model');
 
 // Go
 const argv = yargs
@@ -13,6 +16,7 @@ const argv = yargs
   .describe('mosaics',       'Space-separated urls of mosaics to use')
   .describe('project',       'ID of target project')
   .describe('subject-set',   'ID of target subject set')
+  .describe('user-id',       'ID of Panoptes user to run job as')
   .default('provider',       'planet-api')
   .choices('provider',       ['planet-api'])
   .demand([
@@ -31,24 +35,28 @@ console.log('Loading AOI from KML file', file);
 const aoi = new AOI(file);
 const manifestFile = 'data/'+new Date().getTime()+'.csv';
 
-const redisHost = {
-  host: process.env.REDIS_HOST || 'redis',
-  port: process.env.REDIS_PORT || 6379
-};
-
 // Instantiate script status tracker
-const status = new Status(argv.jobId, redisHost);
+const status = new Status(argv.jobId);
 
 // Create mosaic instances from provided URLs
 const mosaics = argv.mosaics.map((mosaic, i) => {
   return new Mosaic(argv.provider, 'image' + (i + 1), mosaic, status);
 });
 
-// Create and upload subjects
-const manifest = new Manifest(mosaics, aoi, argv.project, argv.subjectSet, status);
-
-manifest.deploy((err, result) => {
+// Get user
+User.find(argv.userId, (err, user) => {
   if (err) throw err;
-  this.status.update('deploying_subjects', 'done');
-  console.log('Finished uploading subjects.');
-});
+  // Create and upload subjects
+  const manifest = new Manifest(mosaics, aoi, argv.project, argv.subjectSet, status, user);
+
+  manifest.deploy((err, result) => {
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    } else {
+      status.update('finished', 'done');
+      console.log('Finished uploading subjects.');
+      process.exit(0);
+    }
+  });
+})

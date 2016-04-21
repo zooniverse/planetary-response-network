@@ -14,13 +14,15 @@ class Manifest {
    * @param  {Aoi}                   aoi            An area of interest to use
    * @param  {Number}                projectId      Id of Panoptes project to which subjects should be sent
    * @param  {Number}                subjectSetId   Id of Panoptes subject set to which subjects should be sent
+   * @param  {User}                  user           User running the job
    */
-  constructor(mosaics, aoi, projectId, subjectSetId, status) {
+  constructor(mosaics, aoi, projectId, subjectSetId, status, user) {
     this.mosaics = mosaics;
     this.aoi = aoi;
     this.projectId = projectId;
     this.subjectSetId = subjectSetId;
     this.status = status;
+    this.user = user;
   }
 
   /**
@@ -82,19 +84,20 @@ class Manifest {
       this.getSubjects.bind(this),
       this.uploadSubjectsImages.bind(this),
       this.deploySubjectsToPanoptes.bind(this)
-      // panoptesAPI.saveSubjects
     ], callback);
   }
 
   deploySubjectsToPanoptes(subjects, callback) {
     this.status.update('deploying_subjects', 'in-progress');
-    panoptesAPI.saveSubjects(subjects, function(err, callback){
+    panoptesAPI.saveSubjects(this.user, subjects, function(err){
       if(err) {
         console.log(err);
-        this.status.update('deploying_subjects', 'error');
-        throw err;
+        return this.status.update('deploying_subjects', 'error', () => {
+          callback(err);
+        });
       }
       // if successful...
+      this.status.update('deploying_subjects', 'done', callback);
     }.bind(this));
   }
 

@@ -59,7 +59,9 @@ class Manifest {
 
     if (this.images) {
       // Tile provided imagery
-      tilizeImage.tilizeMany(this.images, handler);
+      async.mapSeries(this.images, (tile, callback) => {
+        tilizeImage.tilize(tile, 480, 160, callback);
+      }, handler);
     } else {
       // Fetch and tile imagery from mosaics
       async.mapSeries(this.mosaics, (mosaic, callback) => {

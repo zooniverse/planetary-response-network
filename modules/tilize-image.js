@@ -57,7 +57,7 @@ function tilizeImage (filename, tileSize, overlap, callback){
   }
 
   // Init task queue
-  var concurrency = os.cpus().length
+  var concurrency = os.cpus().length / 2
   var queue = async.queue(create_tile_task, concurrency)
 
   // Completion callback

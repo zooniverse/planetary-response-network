@@ -70,6 +70,8 @@ User.find(argv.userId, (err, user) => {
   }
   if (argv.provider === 'file') {
     args.images = argv.images;
+    args.tileSize = argv.tileSize;
+    args.tileOverlap = argv.tileOverlap;
   } else {
     args.mosaics = mosaics;
     args.aoi = aoi;

@@ -35,6 +35,10 @@ class Manifest {
     this.status = options.status;
     this.user = options.user;
     this.images = options.images;
+    if (this.images) {
+      this.tileSize = options.tileSize;
+      this.tileOverlap = options.tileOverlap;
+    }
   }
 
   /**
@@ -60,7 +64,7 @@ class Manifest {
     if (this.images) {
       // Tile provided imagery
       async.mapSeries(this.images, (tile, callback) => {
-        tilizeImage.tilize(tile, 480, 160, callback);
+        tilizeImage.tilize(tile, this.tileSize, this.tileOverlap, callback);
       }, handler);
     } else {
       // Fetch and tile imagery from mosaics

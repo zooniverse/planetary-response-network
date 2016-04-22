@@ -14,11 +14,15 @@ const argv = yargs
   .describe('job-id',        'Unique job identifier')
   .describe('provider',      'Tile provider to use')
   .describe('mosaics',       'Space-separated urls of mosaics to use')
+  .describe('tile-size',     'Square size of tiles')
+  .describe('tile-size',     'How much to overlap tiles by (in x and y)')
   .describe('project',       'ID of target project')
   .describe('subject-set',   'ID of target subject set')
   .describe('user-id',       'ID of Panoptes user to run job as')
   .default('provider',       'planet-api')
   .choices('provider',       ['planet-api'])
+  .default('tile-size', 480)
+  .default('tile-overlap', 160)
   .demand([
       'project',
       'subject-set'
@@ -40,7 +44,7 @@ const status = new Status(argv.jobId);
 
 // Create mosaic instances from provided URLs
 const mosaics = argv.mosaics.map((mosaic, i) => {
-  return new Mosaic(argv.provider, 'image' + (i + 1), mosaic, status);
+  return new Mosaic(argv.provider, 'image' + (i + 1), mosaic, status, argv.tileSize, argv.tileOverlap);
 });
 
 // Get user

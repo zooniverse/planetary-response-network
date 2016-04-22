@@ -6,11 +6,13 @@ const tilizeImage = require('./tilize-image');
 
 class Mosaic {
 
-  constructor(provider, label, url, status) {
+  constructor(provider, label, url, status, tileSize, tileOverlap) {
     this.provider = provider;
     this.label = label;
     this.url = url;
     this.status = status;
+    this.tileSize = tileSize;
+    this.tileOverlap = tileOverlap;
   }
 
   /**
@@ -60,7 +62,7 @@ class Mosaic {
       this.status.update('tilizing_mosaics', 'in-progress');
       var tasks = [];
       for (var file of files) {
-        tasks.push(async.apply(tilizeImage.tilize, file, 480, 160));
+        tasks.push(async.apply(tilizeImage.tilize, file, this.tileSize, this.tileOverlap));
       }
       async.series(tasks, (err, tilesByQuad) => {
         var mosaicTiles = [];

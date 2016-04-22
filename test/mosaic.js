@@ -11,7 +11,7 @@ const Mosaic = require('../modules/mosaic');
 
 describe('Mosaic', () => {
   const aoi = new AOI('data/central-kathmandu.kml');
-  const mosaic = new Mosaic('planet-api', 'pre', 'http://example.com/mosaic_pre');
+  const mosaic = new Mosaic('planet-api', 'pre', 'http://example.com/mosaic_pre', 480, 160);
 
   // Stub api functions so we can test with no network dependency
   sinon.stub(planetAPI, 'fetchQuadsFromAOI', (aoi, label, url, callback) => {

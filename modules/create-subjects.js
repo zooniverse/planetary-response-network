@@ -37,8 +37,6 @@ function subjectsFromTileSets(tileSets, callback) {
       subjectTileSet.push(tileSet[i]);
     }
     subjectTileSets.push(subjectTileSet);
-
-    i++;
   }
   // Create subjects from new tile sets
   async.map(subjectTileSets, subjectFromTiles, callback);

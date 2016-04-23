@@ -1,11 +1,14 @@
 'use strict';
 
-const async = require('async');
-const csvStringify = require('csv-stringify');
+const async          = require('async');
+const csvStringify   = require('csv-stringify');
 const createSubjects = require('./create-subjects');
-const panoptesAPI = require('./panoptes-api');
-const uploadToS3 = require('./upload-to-s3');
-const tilizeImage = require('./tilize-image');
+const panoptesAPI    = require('./panoptes-api');
+const uploadToS3     = require('./upload-to-s3');
+const tilizeImage    = require('./tilize-image');
+const fs             = require('fs');
+const imgMeta        = require('./image-meta');
+const path           = require('path');
 
 class Manifest {
 
@@ -49,6 +52,7 @@ class Manifest {
     const handler = (err, tileSets) => {
       this.status.update('tilizing_mosaics', 'done');
       createSubjects.subjectsFromTileSets(tileSets, (err, subjects) => {
+        // console.log('SUBJECTS.LENGTH = ', subjects.length); // ---STI
         if (err) return callback(err);
         subjects = subjects.map(subject => {
           subject.links = {
@@ -57,7 +61,9 @@ class Manifest {
           };
           return subject;
         });
-        callback(null, subjects)
+        // console.log('SUBJECTS: ', subjects); // --STI
+        this.generateManifest(subjects); // May want to move this somewhere else?
+        callback(null, subjects);
       });
     }
 
@@ -73,6 +79,52 @@ class Manifest {
       }, handler);
     }
   }
+
+  /**
+   * Generates a CSV manifest for manual uploads via PFE
+   */
+  generateManifest(subjects, callback) {
+    console.log('Generating manifest...'); // To do: use "status" instead
+    let csvData = [],
+        maxLocations = 0,
+        outputPath = '';
+    for(let subject of subjects) {
+      maxLocations = subject.locations.length;
+      outputPath = path.dirname( subject.locations[0]['image/jpeg'] );
+
+      let subjectData = [
+        // ...[...subject.locations].map( (location) => path.basename( location['image/jpeg'] ) ), // requires NodeJS ~5.10
+        subject.metadata.upper_left.lon,
+        subject.metadata.upper_left.lat,
+        subject.metadata.upper_right.lon,
+        subject.metadata.upper_right.lat,
+        subject.metadata.bottom_right.lon,
+        subject.metadata.bottom_right.lat,
+        subject.metadata.bottom_left.lon,
+        subject.metadata.bottom_left.lat,
+        subject.metadata.center.lon,
+        subject.metadata.center.lat
+      ];
+
+      let locations = [];
+      for(let location of subject.locations) {
+        subjectData.splice(0, 0, path.basename(location['image/jpeg']) );
+      }
+      csvData.push(subjectData);
+    }
+
+    let csvHeader = [ 'upper_left_lon', 'upper_left_lat', 'upper_right_lon', 'upper_right_lat', 'bottom_right_lon', 'bottom_right_lat', 'bottom_left_lon', 'bottom_left_lat', 'center_lon', 'center_lat' ];
+    let imageHeaders = [];
+    for(let i=0; i<maxLocations; i++) {
+      csvHeader.splice(0, 0, `image${i+1}`);
+    }
+    csvData.splice(0, 0, csvHeader);
+    // callback(csvData, null);
+    csvStringify(csvData, function(error, stringifiedData) {
+      fs.writeFile(`${outputPath}/manifest.csv`, stringifiedData);
+    });
+  }
+
 
   deploy(callback) {
     async.waterfall([

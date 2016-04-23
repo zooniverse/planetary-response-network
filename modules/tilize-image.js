@@ -50,7 +50,7 @@ function tilizeImage (filename, tileSize, overlap, callback){
     // Should we -normalize each tile?
     // PRO: Ensures contrast is stretched if images are too dark or washed out
     // CON: May take longer to process?
-    im.convert([ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
+    im.convert([ filename + '[0]', '-equalize', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
       if (err) return done(err)
       imgMeta.write(outfilename, '-userComment', coords, done)  // write coordinates to tile image metadata
     })

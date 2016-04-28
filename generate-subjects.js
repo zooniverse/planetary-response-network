@@ -14,6 +14,9 @@ const argv = yargs
   .describe('job-id',        'Unique job identifier')
   .describe('provider',      'Tile provider to use')
   .describe('mosaics',       'Space-separated urls of mosaics to use')
+  .describe('images',        'Space-separated paths to images to use')
+  .describe('labels',        'Space-separated list of labels to overlay on tiles (first label will be used for tiles from first image/mosaic, and so on)')
+  .describe('label-pos',     'Compass point to anchor labels to')
   .describe('tile-size',     'Square size of tiles')
   .describe('tile-overlap',  'How much to overlap tiles by (in x and y)')
   .describe('project',       'ID of target project')
@@ -23,6 +26,7 @@ const argv = yargs
   .default('tile-overlap', 160)
   .choices('provider',       ['planet-api', 'file'])
   .default('provider',       'planet-api')
+  .default('label-pos',      'south')
   .implies('mosaics', 'aoi')
   .implies('aoi', 'mosaics')
   .demand([
@@ -31,8 +35,19 @@ const argv = yargs
   ])
   .array('mosaics')
   .array('images')
+  .array('labels')
   .check(argv => {
-    return !argv.mosaics || (argv.mosaics && !argv.images)
+    if (argv.mosaics && argv.labels && argv.mosaics.length != argv.labels.length) {
+      throw new Error('If supplying mosaic labels, the number of labels must match the number of mosaics');
+    }
+    if (argv.images && argv.labels && argv.images.length != argv.labels.length) {
+      throw new Error('If supplying image labels, the number of labels must match the number of images');
+    }
+    if (argv.images && argv.mosaics) {
+      throw new Error('Please specify either images or mosaics, but not both');
+    }
+
+    return true;
   })
   .argv;
 
@@ -54,9 +69,12 @@ let mosaics;
 if (argv.provider !== 'file') {
   // Create mosaic instances from provided URLs
   mosaics = argv.mosaics.map((mosaic, i) => {
+    let label = argv.mosaicLabels ? argv.mosaicLabels[i] : 'image' + (i + 1);
     return new Mosaic({
       provider: argv.provider,
-      label: 'image' + (i + 1),
+      label: label,
+      showLabels: argv.mosaicLabels,
+      labelPos: argv.labelPos,
       url: mosaic,
       tileSize: argv.tileSize,
       tileOverlap: argv.tileOverlap,
@@ -77,6 +95,8 @@ User.find(argv.userId, (err, user) => {
   }
   if (argv.provider === 'file') {
     args.images = argv.images;
+    args.labels = argv.labels;
+    args.labelPos = argv.labelPos;
     args.tileSize = argv.tileSize;
     args.tileOverlap = argv.tileOverlap;
   } else {

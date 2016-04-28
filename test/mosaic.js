@@ -18,6 +18,8 @@ describe('Mosaic', () => {
   const mosaic = new Mosaic({
     provider: 'planet-api',
     label: 'pre',
+    labelPos: 'south',
+    showLabel: true,
     url: 'http://example.com/mosaic_pre',
     tileSize: 480,
     tileOverlap: 160,
@@ -38,12 +40,14 @@ describe('Mosaic', () => {
     it('should set internal properties', function () {
       expect(mosaic).to.have.property('provider');
       expect(mosaic).to.have.property('label');
+      expect(mosaic).to.have.property('showLabel');
       expect(mosaic).to.have.property('url');
       expect(mosaic).to.have.property('tileSize');
       expect(mosaic).to.have.property('tileOverlap');
       expect(mosaic).to.have.property('status');
       expect(mosaic.provider).to.equal('planet-api');
       expect(mosaic.label).to.equal('pre');
+      expect(mosaic.showLabel).to.equal(true);
       expect(mosaic.url).to.equal('http://example.com/mosaic_pre');
       expect(mosaic.tileSize).to.equal(480);
       expect(mosaic.tileOverlap).to.equal(160);
@@ -87,7 +91,7 @@ describe('Mosaic', () => {
   describe('#createTilesForAOI', () => {
     it('should create tile tasks for each quad image', (done) => {
 
-       var tilizeManyStub = sinon.stub(tilizeImage, 'tilizeMany', (files, tileSize, tileOverlap, callback) => {
+       var tilizeManyStub = sinon.stub(tilizeImage, 'tilizeMany', (files, tileSize, tileOverlap, label, labelPos, callback) => {
          callback(null, [
            '/path/to/some/tile',
            '/path/to/some/tile',
@@ -102,7 +106,9 @@ describe('Mosaic', () => {
          expect(tilizeManyStub.args[0][0]).to.deep.equal(['/path/to/some/file', '/path/to/some/file']);
          expect(tilizeManyStub.args[0][1]).to.equal(480);
          expect(tilizeManyStub.args[0][2]).to.equal(160);
-         expect(tilizeManyStub.args[0][3]).to.be.an.instanceOf(Function);
+         expect(tilizeManyStub.args[0][3]).to.equal('pre');
+         expect(tilizeManyStub.args[0][4]).to.equal('south');
+         expect(tilizeManyStub.args[0][5]).to.be.an.instanceOf(Function);
          done();
        });
 

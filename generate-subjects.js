@@ -54,7 +54,14 @@ let mosaics;
 if (argv.provider !== 'file') {
   // Create mosaic instances from provided URLs
   mosaics = argv.mosaics.map((mosaic, i) => {
-    return new Mosaic(argv.provider, 'image' + (i + 1), mosaic, status, argv.tileSize, argv.tileOverlap);
+    return new Mosaic({
+      provider: argv.provider,
+      label: 'image' + (i + 1),
+      url: mosaic,
+      tileSize: argv.tileSize,
+      tileOverlap: argv.tileOverlap,
+      status: status
+    });
   });
 }
 

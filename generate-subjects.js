@@ -15,7 +15,7 @@ const argv = yargs
   .describe('provider',      'Tile provider to use')
   .describe('mosaics',       'Space-separated urls of mosaics to use')
   .describe('tile-size',     'Square size of tiles')
-  .describe('tile-size',     'How much to overlap tiles by (in x and y)')
+  .describe('tile-overlap',  'How much to overlap tiles by (in x and y)')
   .describe('project',       'ID of target project')
   .describe('subject-set',   'ID of target subject set')
   .describe('user-id',       'ID of Panoptes user to run job as')

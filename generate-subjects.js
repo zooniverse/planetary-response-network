@@ -41,7 +41,7 @@ console.log('ARGV = ', argv);
 let aoi;
 if (argv.provider !== 'file') {
   // Load AOI
-  const file = argv._[0];
+  const file = argv.aoi;
   aoi = new AOI(file);
   console.log('Loading AOI from KML file', file);
 }

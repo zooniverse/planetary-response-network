@@ -38,7 +38,7 @@ function generateSubjects (task, done) {
     '--project', task.project_id,
     '--subject-set', task.subject_set_id,
     '--user-id', task.user_id,
-    task.aoi_file
+    '--aoi', task.aoi_file
   ])
 
   job.on('close', function (code) {

@@ -50,14 +50,14 @@ function tilizeImage (filename, tileSize, overlap, callback){
     // Should we -normalize each tile?
     // PRO: Ensures contrast is stretched if images are too dark or washed out
     // CON: May take longer to process?
-    im.convert([ filename + '[0]', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
+    im.convert([ filename + '[0]', '-equalize', '-crop', crop_option, '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
       if (err) return done(err)
       imgMeta.write(outfilename, '-userComment', coords, done)  // write coordinates to tile image metadata
     })
   }
 
   // Init task queue
-  var concurrency = os.cpus().length
+  var concurrency = os.cpus().length / 2
   var queue = async.queue(create_tile_task, concurrency)
 
   // Completion callback
@@ -82,7 +82,26 @@ function tilizeImage (filename, tileSize, overlap, callback){
   } // end outer for loop
 }
 
+/**
+ * Tilizes a set of images into a flat list of tiles. Assumes the source files are of the exactly same geographic bounds (i.e. same space, different time)
+ * @param {Array<String>}  files
+ * @param {Function}       callback
+ */
+function tilizeImages(files, callback) {
+  var tasks = [];
+  for (var file of files) {
+    tasks.push(async.apply(tilizeImage, file, 480, 160));
+  }
+  async.series(tasks, (err, tilesBySrc) => {
+    var allTiles = [];
+    for (var tiles of tilesBySrc) {
+      allTiles = allTiles.concat(tiles);
+    }
+    callback(err, allTiles.sort());
+  });
+}
 
 module.exports = {
-  tilize: tilizeImage
+  tilize: tilizeImage,
+  tilizeMany: tilizeImages
 };

@@ -69,6 +69,7 @@ function tilizeImage (filename, tileSize, overlap, label, labelPos, callback){
       convertArgs.push([
         outfilename,
         '-gravity', labelPos,
+        '-pointsize', 14,
         '-stroke', '#000C',
         '-strokewidth', 2,
         '-annotate', 0, label,

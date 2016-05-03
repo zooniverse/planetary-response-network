@@ -74,6 +74,7 @@ class Manifest {
     if (this.images) {
       // Tile provided imagery
       async.mapSeries(this.images, (image, callback) => {
+        // TO DO: accept case with no labels
         tilizeImage.tilize(image, this.tileSize, this.tileOverlap, this.labels[this.images.indexOf(image)], this.labelPos, callback);
       }, handler);
     } else {

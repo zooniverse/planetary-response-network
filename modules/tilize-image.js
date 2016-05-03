@@ -50,35 +50,87 @@ function tilizeImage (filename, tileSize, overlap, label, labelPos, callback){
       center       : geoCoords.pxToWgs84(ds, offset_x + tile_wid / 2, offset_y + tile_hei / 2)
     }
 
+
+  /* ImageMagick command
+  convert Pedernales2-Before.tif \
+    -crop 10000x10000+5000+5000 \
+    -extent 10000x10000 \
+    -background white \
+    -compose copy \
+    +repage \
+    -gravity south \
+    -stroke '#000C' -strokewidth 2 -pointsize 14 \
+    -annotate 0 'Faerie Dragon' -stroke none -fill white \
+    -annotate 0 'Faerie Dragon' \
+    foo_splice.jpg
+    */
+
+
+    let imCommand = `${filename}[0] -crop ${tile_wid}x${tile_hei}+${offset_x}+${offset_y} -extent ${tile_wid}x${tile_hei} -background white -compose copy +repage -gravity south -stroke black -strokewidth 2 -pointsize 14 -annotate 0 ${label} -stroke none -fill white -annotate 0 ${label} ${outfilename}`;
+    // let convertArgs = [ imCommand.split(' ') ];
+    let convertArgs =  [ [ 'data/pedernales-before.tif[0]',
+    '-crop',
+    '480x480+0+1600',
+    '-extent',
+    '480x480',
+    '-background',
+    'white',
+    '-compose',
+    'copy',
+    '+repage',
+    '-gravity',
+    'south',
+    '-stroke',
+    'black',
+    '-strokewidth',
+    '2',
+    '-pointsize',
+    '14',
+    '-annotate', '0 gfhjkl',
+    '-stroke', 'none',
+    '-fill', 'white',
+    '-annotate', '0 gfhjkl',
+    'data/pedernales-before_0_5.jpeg' ] ];
+
     // Should we -normalize each tile?
     // PRO: Ensures contrast is stretched if images are too dark or washed out
     // CON: May take longer to process?
-    let convertArgs = [
-      [
-        filename + '[0]',
-        '-equalize',
-        '-crop', crop_option,
-        '-background', 'black',
-        '-extent', extent_option,
-        '-compose', 'Copy',
-        '+repage',
-        outfilename
-      ]
-    ];
-    if (label) {
-      convertArgs.push([
-        outfilename,
-        '-gravity', labelPos,
-        '-pointsize', 14,
-        '-stroke', '#000C',
-        '-strokewidth', 2,
-        '-annotate', 0, label,
-        '-stroke', 'none',
-        '-fill', 'white',
-        '-annotate', 0, label,
-        outfilename
-      ]);
-    }
+    console.log('outfilename = ', outfilename);
+    // let convertArgs = [
+    //   [
+    //     filename + '[0]',
+    //     '-equalize',
+    //     '-crop', crop_option,
+    //     '-extent', extent_option,
+    //     '-background', 'black',
+    //     // '-compose', 'copy',
+    //     '+repage',
+    //     '-gravity', labelPos,
+    //     '-stroke', '#000C',
+    //     '-strokewidth', 2,
+    //     '-pointsize', 14,
+    //     '-annotate', 0, label,
+    //     '-stroke none',
+    //     '-fill white',
+    //     '-annotate', 0, label,
+    //     outfilename
+    //   ]
+    // ];
+    console.log('convertArgs = ', convertArgs);
+    // if (label) {
+    //   convertArgs.push([
+    //     outfilename ,
+    //     '-gravity', labelPos,
+    //     '-pointsize', 14,
+    //     '-stroke', '#000C',
+    //     '-strokewidth', 2,
+    //     '-annotate', 0, label,
+    //     '-stroke', 'none',
+    //     '-fill', 'white',
+    //     '-annotate', 0, label,
+    //     outfilename
+    //   ]);
+    // }
     async.eachSeries(convertArgs, im.convert, (err, results) => {
       if (err) return done(err);
       imgMeta.write(outfilename, '-userComment', coords, done)  // write coordinates to tile image metadata

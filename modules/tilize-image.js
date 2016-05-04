@@ -7,7 +7,6 @@ var gdal           = require('gdal')
 var async          = require('async')
 var imgMeta        = require('./image-meta')
 var geoCoords      = require('./geo-coords')
-var exists         = require('../lib/exists')
 
 /**
  * Splits an image into tiles
@@ -63,7 +62,7 @@ function tilizeImage (filename, tileSize, overlap, options, callback){
     }
 
     // add label-generating arguments
-    if( exists(options.label) ) {
+    if(options.label) {
       convertArgs = convertArgs.concat([
         '-gravity', 'south',
         '-stroke', 'black',

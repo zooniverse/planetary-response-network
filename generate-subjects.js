@@ -7,7 +7,6 @@ const Status        = require('./modules/status');
 const redis         = require('./lib/redis');
 const redisPubSub   = require('./lib/redis-pubsub');
 const User          = require('./lib/user-model');
-const exists        = require('./lib/exists');
 
 // Go
 const argv = yargs
@@ -79,7 +78,7 @@ if (argv.provider !== 'file') {
       tileOverlap: argv.tileOverlap,
       imOptions: {
         equalize: argv.equalize,
-        label: exists(argv.labels) ? argv.labels[i] : null, // 'image' + (i + 1), // Todo: maybe enable this for a future auto-label option?
+        label: argv.labels ? argv.labels[i] : null, // 'image' + (i + 1), // Todo: maybe enable this for a future auto-label option?
         labelPos: argv.labelPos
       },
       status: status
@@ -100,7 +99,7 @@ User.find(argv.userId, (err, user) => {
   if (argv.provider === 'file') {
     args.images = argv.images;
     args.equalize = argv.equalize;
-    args.labels = exists(argv.labels) ? argv.labels : null;
+    if (argv.labels) args.labels = argv.labels;
     args.labelPos = argv.labelPos;
     args.tileSize = argv.tileSize;
     args.tileOverlap = argv.tileOverlap;

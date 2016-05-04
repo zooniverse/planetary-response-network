@@ -9,7 +9,6 @@ const tilizeImage    = require('./tilize-image');
 const fs             = require('fs');
 const imgMeta        = require('./image-meta');
 const path           = require('path');
-const exists         = require('../lib/exists');
 
 class Manifest {
 
@@ -45,7 +44,7 @@ class Manifest {
     this.imOptions = {};
     this.imOptions.equalize = options.equalize;
 
-    if( exists(options.labels) ) {
+    if(options.labels) {
       this.imOptions.labels = options.labels;
       this.imOptions.labelPos = options.labelPos;
     }
@@ -82,8 +81,8 @@ class Manifest {
       async.mapSeries(this.images, (image, callback) => {
         let options = {
           equalize: this.imOptions.equalize,
-          label:    exists(this.imOptions.labels)   ? this.imOptions.labels[this.images.indexOf(image)] : null,
-          labelPos: exists(this.imOptions.labelPos) ? this.imOptions.labelPos : null
+          label:    this.imOptions.labels   ? this.imOptions.labels[this.images.indexOf(image)] : null,
+          labelPos: this.imOptions.labelPos
         }
         tilizeImage.tilize(image, this.tileSize, this.tileOverlap, options, callback);
       }, handler);

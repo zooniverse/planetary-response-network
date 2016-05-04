@@ -18,6 +18,7 @@ var geoCoords      = require('./geo-coords')
  * @param  {Function} callback
  */
 function tilizeImage (filename, tileSize, overlap, options, callback){
+  options = options || {};
   var tile_wid = tileSize;
   var tile_hei = tileSize;
   var step_x = tile_wid - overlap;

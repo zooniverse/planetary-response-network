@@ -6,11 +6,20 @@ const tilizeImage = require('./tilize-image');
 
 class Mosaic {
 
-  constructor(provider, label, url, status) {
-    this.provider = provider;
-    this.label = label;
-    this.url = url;
-    this.status = status;
+  /**
+   * @classdesc a Mosaic represents a large image ready to be tiled
+   */
+  constructor(options) {
+    this.provider = options.provider;
+    this.imOptions = {
+      equalize: options.imOptions.equalize,
+      label: options.imOptions.label,
+      labelPos: options.imOptions.labelPos
+    };
+    this.url = options.url;
+    this.tileSize = options.tileSize;
+    this.tileOverlap = options.tileOverlap;
+    this.status = options.status;
   }
 
   /**
@@ -58,18 +67,14 @@ class Mosaic {
 
       // Tile em up
       this.status.update('tilizing_mosaics', 'in-progress');
-      var tasks = [];
-      var cornerCoords = null;
-      for (var file of files) {
-        tasks.push(async.apply(tilizeImage.tilize, file, 480, 160, cornerCoords));
-      }
-      async.series(tasks, (err, tilesByQuad) => {
-        var mosaicTiles = [];
-        for (var tiles of tilesByQuad) {
-          mosaicTiles = mosaicTiles.concat(tiles);
+      tilizeImage.tilizeMany(files, this.tileSize, this.tileOverlap, this.imOptions, (err, tiles) => {
+        if (err) {
+          this.status.update('tilizing_mosaics', 'error');
+          callback(err);
+        } else {
+          this.status.update('tilizing_mosaics', 'done');
+          callback(null, tiles);
         }
-        this.status.update('tilizing_mosaics', 'done');
-        callback(err, mosaicTiles.sort());
       });
     });
   }

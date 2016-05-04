@@ -9,9 +9,24 @@ const AOI = require('../modules/aoi');
 const Quad = require('../modules/quad');
 const Mosaic = require('../modules/mosaic');
 
+// Stub status class
+const Status = function () {};
+Status.prototype.update = Function.prototype;
+
 describe('Mosaic', () => {
   const aoi = new AOI('data/central-kathmandu.kml');
-  const mosaic = new Mosaic('planet-api', 'pre', 'http://example.com/mosaic_pre');
+  const mosaic = new Mosaic({
+    provider: 'planet-api',
+    imOptions: {
+      equalize: true,
+      label: 'imagelabel',
+      labelPos: 'south'
+    },
+    url: 'http://example.com/mosaic_pre',
+    tileSize: 480,
+    tileOverlap: 160,
+    status: new Status()
+  });
 
   // Stub api functions so we can test with no network dependency
   sinon.stub(planetAPI, 'fetchQuadsFromAOI', (aoi, label, url, callback) => {
@@ -25,10 +40,20 @@ describe('Mosaic', () => {
 
   describe('create', () => {
     it('should set internal properties', function () {
-      expect(mosaic).to.have.property('label');
-      expect(mosaic.label).to.equal('pre');
+      expect(mosaic).to.have.property('provider');
+      expect(mosaic).to.have.property('imOptions');
       expect(mosaic).to.have.property('url');
+      expect(mosaic).to.have.property('tileSize');
+      expect(mosaic).to.have.property('tileOverlap');
+      expect(mosaic).to.have.property('status');
+      expect(mosaic.provider).to.equal('planet-api');
+      expect(mosaic.imOptions.equalize).to.equal(true);
+      expect(mosaic.imOptions.label).to.equal('imagelabel');
+      expect(mosaic.imOptions.labelPos).to.equal('south');
       expect(mosaic.url).to.equal('http://example.com/mosaic_pre');
+      expect(mosaic.tileSize).to.equal(480);
+      expect(mosaic.tileOverlap).to.equal(160);
+      expect(mosaic.status).to.be.an.instanceOf(Status);
     });
   });
 
@@ -68,8 +93,10 @@ describe('Mosaic', () => {
   describe('#createTilesForAOI', () => {
     it('should create tile tasks for each quad image', (done) => {
 
-       var tilizeStub = sinon.stub(tilizeImage, 'tilize', (file, w, h, callback) => {
+       var tilizeManyStub = sinon.stub(tilizeImage, 'tilizeMany', (files, tileSize, tileOverlap, options, callback) => {
          callback(null, [
+           '/path/to/some/tile',
+           '/path/to/some/tile',
            '/path/to/some/tile',
            '/path/to/some/tile'
          ]);
@@ -78,7 +105,11 @@ describe('Mosaic', () => {
        mosaic.createTilesForAOI(aoi, (err, tiles) => {
          expect(tiles).to.be.an('Array');
          expect(tiles.length).to.equal(4);
-         expect(tilizeStub.alwaysCalledWith('/path/to/some/file', 480, 160)).to.be.true;
+         expect(tilizeManyStub.args[0][0]).to.deep.equal(['/path/to/some/file', '/path/to/some/file']);
+         expect(tilizeManyStub.args[0][1]).to.equal(480);
+         expect(tilizeManyStub.args[0][2]).to.equal(160);
+         expect(tilizeManyStub.args[0][3]).to.contain.all.keys(['equalize', 'label', 'labelPos']);
+         expect(tilizeManyStub.args[0][4]).to.be.an.instanceOf(Function);
          done();
        });
 

@@ -32,7 +32,7 @@ var tasks = {
 function updateStatus(task, status){
   console.log('[BUILD STATUS] Task \'%s\' status updated to \'%s\'', task, status);
   tasks[task].status = status
-  var channel = 'status_'+argv.jobId;
+  var channel = 'status:'+argv.jobId;
   redis.subscribe(channel, function(error, count){
     pub.publish(channel, JSON.stringify(tasks));
   });

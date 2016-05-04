@@ -1,3 +1,4 @@
+'use strict';
 var os        = require('os');
 var fs        = require('fs');
 var im        = require('imagemagick');
@@ -9,12 +10,15 @@ var geoCoords = require('./geo-coords');
 
 /**
  * Splits an image into tiles
- * @param  {String}   filename input image
- * @param  {Number}   tileSize Square size for the resultant tiles (in pixels)
- * @param  {Number}   overlap  Amount by which to overlap tiles in x and y (in pixels)
+ * @param  {String}   filename  input image
+ * @param  {Number}   tileSize  Square size for the resultant tiles (in pixels)
+ * @param  {Number}   overlap   Amount by which to overlap tiles in x and y (in pixels)
+ * @param  {String}   label     A label to overlay on the image
+ * @param  {Number}   labelPos  Where to anchor label (e.g. "south", "northwest" etc)
  * @param  {Function} callback
  */
-function tilizeImage (filename, tileSize, overlap, params, callback){
+function tilizeImage (filename, tileSize, overlap, options, callback){
+  var params = null; // this is temporarily for Sentine-2 data
   var tile_wid = tileSize;
   var tile_hei = tileSize;
   var step_x = tile_wid - overlap;
@@ -37,11 +41,7 @@ function tilizeImage (filename, tileSize, overlap, params, callback){
     var col = task.col
     var offset_x = task.offset_x
     var offset_y = task.offset_y
-
-    // crop current tile
-    var outfilename = dirname + '/' + basename + '_' + row + '_' + col + '.jpeg'
-    var crop_option = tile_wid + 'x' + tile_hei + '+' + offset_x + '+' + offset_y
-    var extent_option = tile_wid + 'x' + tile_hei
+    var outfile = dirname + '/' + basename + '_' + row + '_' + col + '.jpeg'
 
     /* Convert corner and center pixel coordinates to geo */
     var coords = {};
@@ -55,24 +55,50 @@ function tilizeImage (filename, tileSize, overlap, params, callback){
       }
     }
 
-    // Should we -normalize each tile?
-    // PRO: Ensures contrast is stretched if images are too dark or washed out
-    // CON: May take longer to process?
-    // Note: -equalize works well to redistribute the histogram when there's lots of cloud cover
-    console.log('NOTE: Running \'convert\' with -equalize option.');
-    im.convert([ filename + '[0]', '-crop', crop_option, '-equalize', '-background', 'black', '-extent', extent_option, '-gravity', 'center', '-compose', 'Copy', '+repage', outfilename ], function (err, stdout) {
-      if (err) return done(err)
-      imgMeta.write(outfilename, '-userComment', coords, done)  // write coordinates to tile image metadata
-    })
+    // base tilizing arguments
+    var convertArgs = [
+      `${filename}[0]`,
+      '-crop', `${tile_wid}x${tile_hei}+${offset_x}+${offset_y}`,
+      '-extent', `${tile_wid}x${tile_hei}`,
+      '-background', 'black',
+      '-compose', 'copy',
+      '+repage'
+    ];
+
+    // equalize image histogram (contrast stretch)
+    if(options.equalize) {
+      convertArgs = convertArgs.concat(['-equalize']);
+    }
+
+    // add label-generating arguments
+    if(options.label) {
+      convertArgs = convertArgs.concat([
+        '-gravity', 'south',
+        '-stroke', 'black',
+        '-strokewidth', 2,
+        '-pointsize', 14,
+        '-annotate', 0, options.label,
+        '-stroke', 'none',
+        '-fill', 'white',
+        '-annotate', 0, options.label
+      ]);
+    }
+
+    // lastly, concatenate output file name
+    convertArgs = [ convertArgs.concat([outfile]) ];
+
+    async.eachSeries(convertArgs, im.convert, (err, results) => {
+      if (err) return done(err);
+      imgMeta.write(outfile, '-userComment', coords, done)  // write coordinates to tile image metadata
+    });
   }
 
   // Init task queue
-  var concurrency = os.cpus().length
+  var concurrency = os.cpus().length / 2
   var queue = async.queue(create_tile_task, concurrency)
 
   // Completion callback
   queue.drain = function (error) {
-    console.log('  Finished tilizing mosaic: ' + filename);
     callback(error, files)
   }
 
@@ -92,7 +118,30 @@ function tilizeImage (filename, tileSize, overlap, params, callback){
   } // end outer for loop
 }
 
+/**
+ * Tilizes a set of images into a flat list of tiles. Assumes the source files are of the exactly same geographic bounds (i.e. same space, different time)
+ * @param {Array<String>}  files           files
+ * @param {Number}         tileSize        tile size
+ * @param {Number}         tileOverlap     tile overlap size (x and y)
+ * @param {String}         label           A label to overlay on the image
+ * @param {Number}         labelPos        Where to anchor label (1 = top left, 2 = top center, 3 = top right, etc)
+ * @param {Function}       callback
+ */
+function tilizeImages(files, tileSize, tileOverlap, options, callback) {
+  var tasks = [];
+  for (var file of files) {
+    tasks.push(async.apply(tilizeImage, file, tileSize, tileOverlap, options));
+  }
+  async.series(tasks, (err, tilesBySrc) => {
+    var allTiles = [];
+    for (var tiles of tilesBySrc) {
+      allTiles = allTiles.concat(tiles);
+    }
+    callback(err, allTiles.sort());
+  });
+}
 
 module.exports = {
-  tilize: tilizeImage
+  tilize: tilizeImage,
+  tilizeMany: tilizeImages
 };

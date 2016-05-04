@@ -20,8 +20,6 @@ class Mosaic {
     this.tileSize = options.tileSize;
     this.tileOverlap = options.tileOverlap;
     this.status = options.status;
-
-    console.log('MOSAIC OPTIONS = ', options);
   }
 
   /**

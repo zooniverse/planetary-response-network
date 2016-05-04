@@ -64,7 +64,6 @@ class Manifest {
     const handler = (err, tileSets) => {
       this.status.update('tilizing_mosaics', 'done');
       createSubjects.subjectsFromTileSets(tileSets, (err, subjects) => {
-        // console.log('SUBJECTS.LENGTH = ', subjects.length); // ---STI
         if (err) return callback(err);
         subjects = subjects.map(subject => {
           subject.links = {
@@ -73,7 +72,6 @@ class Manifest {
           };
           return subject;
         });
-        // console.log('SUBJECTS: ', subjects); // --STI
         this.generateManifest(subjects); // May want to move this somewhere else?
         callback(null, subjects);
       });
@@ -82,7 +80,6 @@ class Manifest {
     if (this.images) {
       // Tile provided imagery
       async.mapSeries(this.images, (image, callback) => {
-        // TO DO: accept case with no labels
         let options = {
           equalize: this.imOptions.equalize,
           label:    exists(this.imOptions.labels)   ? this.imOptions.labels[this.images.indexOf(image)] : null,

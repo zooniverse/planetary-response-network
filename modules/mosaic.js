@@ -67,10 +67,7 @@ class Mosaic {
 
       // Tile em up
       this.status.update('tilizing_mosaics', 'in-progress');
-
-      let options = this.imOptions;
-
-      tilizeImage.tilizeMany(files, this.tileSize, this.tileOverlap, options, (err, tiles) => {
+      tilizeImage.tilizeMany(files, this.tileSize, this.tileOverlap, this.imOptions, (err, tiles) => {
         if (err) {
           this.status.update('tilizing_mosaics', 'error');
           callback(err);

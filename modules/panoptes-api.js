@@ -25,7 +25,7 @@ function saveSubjects(user, subjects, callback){
   // Inject our access token into api client
   api.headers.Authorization = 'Bearer ' + user.get('accessToken')
 
-  api.update({'params.admin': true});  // careful when using admin mode!
+  // api.update({'params.admin': true});  // careful when using admin mode!
   async.eachSeries(subjects, saveSubject, (err, result) => {
     // Clear access token
     api.headers.Authorization = null

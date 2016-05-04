@@ -18,6 +18,8 @@ class Manifest {
    * @param  {Array<Mosaic>}         options.mosaics        List of mosaics included in the manifest
    * @param  {Aoi}                   options.aoi            An area of interest to use
    * @param  {Array<String>}         options.images         List of image filenames to use as source files instead of fetching from an API
+   * @param  {Array<String>}         options.labels         List of labels to overlay on tiles (first label applied to first source file/mosaic, and so on)
+   * @param  {Array<String>}         options.labelPos       Where to anchor labels (e.g. "south", "northwest")
    * @param  {Number}                options.projectId      Id of Panoptes project to which subjects should be sent
    * @param  {Number}                options.subjectSetId   Id of Panoptes subject set to which subjects should be sent
    * @param  {User}                  options.user           User running the job
@@ -38,6 +40,15 @@ class Manifest {
     this.status = options.status;
     this.user = options.user;
     this.images = options.images;
+
+    this.imOptions = {};
+    this.imOptions.equalize = options.equalize;
+
+    if(options.labels) {
+      this.imOptions.labels = options.labels;
+      this.imOptions.labelPos = options.labelPos;
+    }
+
     if (this.images) {
       this.tileSize = options.tileSize;
       this.tileOverlap = options.tileOverlap;
@@ -52,7 +63,6 @@ class Manifest {
     const handler = (err, tileSets) => {
       this.status.update('tilizing_mosaics', 'done');
       createSubjects.subjectsFromTileSets(tileSets, (err, subjects) => {
-        // console.log('SUBJECTS.LENGTH = ', subjects.length); // ---STI
         if (err) return callback(err);
         subjects = subjects.map(subject => {
           subject.links = {
@@ -61,7 +71,6 @@ class Manifest {
           };
           return subject;
         });
-        // console.log('SUBJECTS: ', subjects); // --STI
         this.generateManifest(subjects); // May want to move this somewhere else?
         callback(null, subjects);
       });
@@ -69,8 +78,13 @@ class Manifest {
 
     if (this.images) {
       // Tile provided imagery
-      async.mapSeries(this.images, (tile, callback) => {
-        tilizeImage.tilize(tile, this.tileSize, this.tileOverlap, callback);
+      async.mapSeries(this.images, (image, callback) => {
+        let options = {
+          equalize: this.imOptions.equalize,
+          label:    this.imOptions.labels   ? this.imOptions.labels[this.images.indexOf(image)] : null,
+          labelPos: this.imOptions.labelPos
+        }
+        tilizeImage.tilize(image, this.tileSize, this.tileOverlap, options, callback);
       }, handler);
     } else {
       // Fetch and tile imagery from mosaics

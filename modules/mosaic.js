@@ -11,8 +11,11 @@ class Mosaic {
    */
   constructor(options) {
     this.provider = options.provider;
-    this.label = options.label;
-    this.showLabel = options.showLabel;
+    this.imOptions = {
+      equalize: options.imOptions.equalize,
+      label: options.imOptions.label,
+      labelPos: options.imOptions.labelPos
+    };
     this.url = options.url;
     this.tileSize = options.tileSize;
     this.tileOverlap = options.tileOverlap;
@@ -64,7 +67,7 @@ class Mosaic {
 
       // Tile em up
       this.status.update('tilizing_mosaics', 'in-progress');
-      tilizeImage.tilizeMany(files, this.tileSize, this.tileOverlap, (err, tiles) => {
+      tilizeImage.tilizeMany(files, this.tileSize, this.tileOverlap, this.imOptions, (err, tiles) => {
         if (err) {
           this.status.update('tilizing_mosaics', 'error');
           callback(err);

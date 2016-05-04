@@ -14,15 +14,22 @@ const argv = yargs
   .describe('job-id',        'Unique job identifier')
   .describe('provider',      'Tile provider to use')
   .describe('mosaics',       'Space-separated urls of mosaics to use')
+  .describe('images',        'Space-separated paths to images to use')
+  .describe('equalize',      'Equalize historgam to stretch contrast')
+  .describe('labels',        'Space-separated list of labels to overlay on tiles (first label will be used for tiles from first image/mosaic, and so on)')
+  .describe('label-pos',     'Compass point to anchor labels to')
   .describe('tile-size',     'Square size of tiles')
   .describe('tile-overlap',  'How much to overlap tiles by (in x and y)')
   .describe('project',       'ID of target project')
   .describe('subject-set',   'ID of target subject set')
   .describe('user-id',       'ID of Panoptes user to run job as')
-  .default('tile-size', 480)
-  .default('tile-overlap', 160)
+  .describe('aoi',          'KML file containing an area of interest for mosaic provider')
+  .default('tile-size',      480)
+  .default('tile-overlap',   160)
+  .default('equalize',       false)
   .choices('provider',       ['planet-api', 'file'])
   .default('provider',       'planet-api')
+  .default('label-pos',      'south')
   .implies('mosaics', 'aoi')
   .implies('aoi', 'mosaics')
   .demand([
@@ -31,8 +38,18 @@ const argv = yargs
   ])
   .array('mosaics')
   .array('images')
+  .array('labels')
   .check(argv => {
-    return !argv.mosaics || (argv.mosaics && !argv.images)
+    if (argv.mosaics && argv.labels && argv.mosaics.length != argv.labels.length) {
+      throw new Error('If supplying mosaic labels, the number of labels must match the number of mosaics');
+    }
+    if (argv.images && argv.labels && argv.images.length != argv.labels.length) {
+      throw new Error('If supplying image labels, the number of labels must match the number of images');
+    }
+    if (argv.images && argv.mosaics) {
+      throw new Error('Please specify either images or mosaics, but not both');
+    }
+    return true;
   })
   .argv;
 
@@ -56,10 +73,14 @@ if (argv.provider !== 'file') {
   mosaics = argv.mosaics.map((mosaic, i) => {
     return new Mosaic({
       provider: argv.provider,
-      label: 'image' + (i + 1),
       url: mosaic,
       tileSize: argv.tileSize,
       tileOverlap: argv.tileOverlap,
+      imOptions: {
+        equalize: argv.equalize,
+        label: argv.labels ? argv.labels[i] : null, // 'image' + (i + 1), // Todo: maybe enable this for a future auto-label option?
+        labelPos: argv.labelPos
+      },
       status: status
     });
   });
@@ -77,6 +98,9 @@ User.find(argv.userId, (err, user) => {
   }
   if (argv.provider === 'file') {
     args.images = argv.images;
+    args.equalize = argv.equalize;
+    if (argv.labels) args.labels = argv.labels;
+    args.labelPos = argv.labelPos;
     args.tileSize = argv.tileSize;
     args.tileOverlap = argv.tileOverlap;
   } else {

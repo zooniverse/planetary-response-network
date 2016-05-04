@@ -7,6 +7,7 @@ const Status        = require('./modules/status');
 const redis         = require('./lib/redis');
 const redisPubSub   = require('./lib/redis-pubsub');
 const User          = require('./lib/user-model');
+const exists        = require('./lib/exists');
 
 // Go
 const argv = yargs
@@ -15,6 +16,7 @@ const argv = yargs
   .describe('provider',      'Tile provider to use')
   .describe('mosaics',       'Space-separated urls of mosaics to use')
   .describe('images',        'Space-separated paths to images to use')
+  .describe('equalize',      'Equalize historgam to stretch contrast')
   .describe('labels',        'Space-separated list of labels to overlay on tiles (first label will be used for tiles from first image/mosaic, and so on)')
   .describe('label-pos',     'Compass point to anchor labels to')
   .describe('tile-size',     'Square size of tiles')
@@ -22,8 +24,10 @@ const argv = yargs
   .describe('project',       'ID of target project')
   .describe('subject-set',   'ID of target subject set')
   .describe('user-id',       'ID of Panoptes user to run job as')
-  .default('tile-size', 480)
-  .default('tile-overlap', 160)
+  .describe('aoi',          'KML file containing an area of interest for mosaic provider')
+  .default('tile-size',      480)
+  .default('tile-overlap',   160)
+  .default('equalize',       false)
   .choices('provider',       ['planet-api', 'file'])
   .default('provider',       'planet-api')
   .default('label-pos',      'south')
@@ -46,7 +50,6 @@ const argv = yargs
     if (argv.images && argv.mosaics) {
       throw new Error('Please specify either images or mosaics, but not both');
     }
-
     return true;
   })
   .argv;
@@ -69,15 +72,16 @@ let mosaics;
 if (argv.provider !== 'file') {
   // Create mosaic instances from provided URLs
   mosaics = argv.mosaics.map((mosaic, i) => {
-    let label = argv.mosaicLabels ? argv.mosaicLabels[i] : 'image' + (i + 1);
     return new Mosaic({
       provider: argv.provider,
-      label: label,
-      showLabels: argv.mosaicLabels,
-      labelPos: argv.labelPos,
       url: mosaic,
       tileSize: argv.tileSize,
       tileOverlap: argv.tileOverlap,
+      imOptions: {
+        equalize: argv.equalize,
+        label: exists(argv.labels) ? argv.labels[i] : null, // 'image' + (i + 1), // Todo: maybe enable this for a future auto-label option?
+        labelPos: argv.labelPos
+      },
       status: status
     });
   });
@@ -95,7 +99,8 @@ User.find(argv.userId, (err, user) => {
   }
   if (argv.provider === 'file') {
     args.images = argv.images;
-    args.labels = argv.labels;
+    args.equalize = argv.equalize;
+    args.labels = exists(argv.labels) ? argv.labels : null;
     args.labelPos = argv.labelPos;
     args.tileSize = argv.tileSize;
     args.tileOverlap = argv.tileOverlap;

@@ -4,7 +4,7 @@ WORKDIR /planetary-response-network
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get -y upgrade && \
-    apt-get install --no-install-recommends -y ca-certificates sudo git curl bash-completion vim-tiny supervisor imagemagick libgdal-dev libimage-exiftool-perl make g++ python
+    apt-get install --no-install-recommends -y ca-certificates sudo git curl bash-completion vim-tiny supervisor ghostscript imagemagick libgdal-dev libimage-exiftool-perl make g++ python
 RUN curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
 RUN apt-get install --no-install-recommends -y nodejs && apt-get clean
 

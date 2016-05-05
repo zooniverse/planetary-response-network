@@ -77,9 +77,9 @@ const status = new Status(argv.jobId);
 
 // Create mosaic instances from provided URLs
 switch (argv.provider){
-  case 'file':       fetchPlanetData();    // use local file source
-  case 'planet-api': fetchPlanetData();    // use Planet Labs API (S3 bucket)
-  case 'sentinel-2': fetchSentinelData();  // use Sentinel-2 data (S3 bucket)
+  case 'file':       fetchPlanetData(); break;    // use local file source
+  case 'planet-api': fetchPlanetData(); break;    // use Planet Labs API (S3 bucket)
+  case 'sentinel-2': fetchSentinelData(); break;  // use Sentinel-2 data (S3 bucket)
   default: console.log('ERROR: Invalid provider \'%s\'', argv.provider);
 }
 

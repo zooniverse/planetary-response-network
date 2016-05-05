@@ -9,8 +9,8 @@ const tilizeImage = require('./tilize-image');
 const utmObj      = require('utm-latlng');
 const mkdirp      = require('mkdirp');
 const path        = require('path');
-const spawn       = require('child_process').spawn;
 const imgMeta     = require('./image-meta');
+const gdalUtils   = require('./gdal-utils');
 
 var utm = new utmObj();
 
@@ -93,20 +93,34 @@ class GridSquare {
     }
 
     let outfile = `${this.path}/composite.tif`;
-    const gdalMergeProcess = spawn('gdal_merge.py', ['-n', 0, '-a_nodata', 0, '-separate', '-of', 'GTiff', '-o', outfile, bandR, bandG, bandB ]);
 
-    gdalMergeProcess.stdout.on('data', (data) => {
-      process.stdout.write(data.toString());
-    });
+    // create RGB composite image
 
-    gdalMergeProcess.stderr.on('data', (data) => {
-      console.log('stderr: %s', data.toString());
-    });
+    // set up merge and translate parameters
+    let mergeParams = {
+      verbose: false,
+      noDataValue: 0,                 // ignore pixels being merged with this value
+      outputNoDataValue: 0,           // assign specific no-data value to output bands
+      separate: true,                 // place input file in separate band
+      outputFormat: 'GTiff',          // specify output format (defaults to GeoTIFF)
+      infiles: [bandR, bandG, bandB],
+      outfile: outfile
+    }
 
-    gdalMergeProcess.on('close', (code) => {
-      console.log('process ended with code %s', code);
-      console.log('OUTILE: ', outfile);
-      callback(null, outfile);
+    let translateParams = {
+      outputType: 'Byte',             // set data type for output bands
+      scale: [0, 2000, 0, 255],       // rescale input values to desired range
+      infile: outfile,
+      outfile: outfile.replace(/composite/g, 'composite_scaled')
+    }
+
+    async.series([
+      async.apply(gdalUtils.merge, mergeParams),
+      async.apply(gdalUtils.translate, translateParams)
+    ], (err, result) => {
+      if(err) callback(err);
+      console.log('RESULT = ', result);
+      callback(null, result[result.length-1]);
     });
 
   }

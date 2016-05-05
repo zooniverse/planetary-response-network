@@ -9,7 +9,7 @@ const tilizeImage = require('./tilize-image');
 const utmObj      = require('utm-latlng');
 const mkdirp      = require('mkdirp');
 const path        = require('path');
-
+const spawn       = require('child_process').spawn;
 const imgMeta     = require('./image-meta');
 
 var utm = new utmObj();
@@ -80,24 +80,35 @@ class GridSquare {
 
   createRGBComposite(callback) {
     console.log('createRGBComposite()'); // DEBUG
-    fs.readdir(this.path, function(err,files) {
-      if(err) throw err;
-      let r, g, b = '';
-      for(let file of files) {
-        if(file.match(/B02.jp2$/i)) { b = `${this.path}/${file}`; }
-        if(file.match(/B03.jp2$/i)) { g = `${this.path}/${file}`; }
-        if(file.match(/B04.jp2$/i)) { r = `${this.path}/${file}`; }
-      }
-      let outfilename = `${this.path}/composite.jpg`;
-      im.convert([ r, g, b, '-combine', '-normalize', outfilename ] , function(err, strout) {
-        im.identify(outfilename, function(err, features) {
-          this.imgMeta.width = features.width;
-          this.imgMeta.height = features.height;
-          if(err) throw err;
-          callback(null, outfilename);
-        }.bind(this));
-      }.bind(this));
-    }.bind(this));
+    let files = fs.readdirSync(this.path);
+    var bandR, bandG, bandB = '';
+    for(let file of files) {
+      if(file.match(/B02.jp2$/i)){ bandB = `${this.path}/${file}` };
+      if(file.match(/B03.jp2$/i)){ bandG = `${this.path}/${file}` };
+      if(file.match(/B04.jp2$/i)){ bandR = `${this.path}/${file}` };
+    }
+
+    if( !bandB && !bandG && !bandR ) {
+      callback('Error: Missing at least one band.');
+    }
+
+    let outfile = `${this.path}/composite.tif`;
+    const gdalMergeProcess = spawn('gdal_merge.py', ['-n', 0, '-a_nodata', 0, '-separate', '-of', 'GTiff', '-o', outfile, bandR, bandG, bandB ]);
+
+    gdalMergeProcess.stdout.on('data', (data) => {
+      process.stdout.write(data.toString());
+    });
+
+    gdalMergeProcess.stderr.on('data', (data) => {
+      console.log('stderr: %s', data.toString());
+    });
+
+    gdalMergeProcess.on('close', (code) => {
+      console.log('process ended with code %s', code);
+      console.log('OUTILE: ', outfile);
+      callback(null, outfile);
+    });
+
   }
 
   /**

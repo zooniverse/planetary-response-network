@@ -1,20 +1,22 @@
 'use strict';
 global.XMLHttpRequest = require('xmlhttprequest-cookie').XMLHttpRequest
 var async             = require('async')
-var apiFactory        = require('./panoptes-client-factory')
+var clientFactory        = require('./panoptes-client-factory')
 
 exports.saveSubjects = saveSubjects
 
 function saveSubject(user, subject, callback) {
-  var api  = apiFactory.getClientForUser(user);
-  api.type('subjects').create(subject).save()
-    .then(function(subject){
-      console.log("Subject created: ,", subject ); // DEBUG CODE
-      callback(null, subject)
-    })
-    .catch(function(error) {
-      callback(error);
-    })
+  clientFactory.getClientForUser(user);
+  .then(client => {
+    return client.type('subjects').create(subject).save()
+  })
+  .then(function(subject){
+    console.log("Subject created: ,", subject ); // DEBUG CODE
+    callback(null, subject)
+  })
+  .catch(function(error) {
+    callback(error);
+  })
 }
 
 function saveSubjects(user, subjects, callback){

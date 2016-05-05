@@ -1,4 +1,5 @@
 'use strict';
+const request = require('request');
 const JsonApiClient = require('json-api-client');
 
 var DEFAULT_ENV = 'staging';
@@ -31,6 +32,14 @@ const config = {
   oauthHost: OAUTH_HOSTS[env]
 };
 
+// How many seconds before expiry to consider refreshing access tokens
+const REFRESH_TOKEN_BUFFER = 900;
+
+const JSON_HEADERS = {
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+};
+
 
 /**
  * @classdesc Allows creating per-user api clients
@@ -57,10 +66,49 @@ class PanoptesClientFactory {
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.api+json; version=1'
       });
-      client.headers['Authorization'] = 'Bearer ' + user.get('accessToken');
       this.clients[userId] = client;
     }
-    return this.clients[userId];
+    return new Promise((resolve, reject) => {
+      ensureAccessToken(user, (err, user) => {
+        this.clients[userId].headers['Authorization'] = 'Bearer ' + user.get('accessToken');
+        resolve(this.clients[userId]);
+      });
+    });
+  }
+}
+
+/**
+ * Checks whether a user's access token is expired or near expiry and refreshes it if so
+ * @param  {User}      user
+ * @param  {Function}  done  Callback
+ */
+function ensureAccessToken(user, done) {
+  const now = new Date().getTime() / 1000;
+  if (parseInt(user.get('accessTokenExpiresAt')) - REFRESH_TOKEN_BUFFER < now) {
+    // Access token has expired or will expire soon; refresh it
+    let data = {
+      grant_type: 'refresh_token',
+      refresh_token: user.get('refreshToken'),
+      client_id: process.env.PANOPTES_API_APPLICATION,
+    };
+
+    request.post({
+      url: config.host + '/oauth/token',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data)
+    }, (err, res, body) => {
+      if (err) return done(err);
+      body = JSON.parse(body);
+      user.update({
+        accessToken: body.access_token,
+        accessTokenExpiresAt: body.created_at + body.expires_in,
+        refreshToken: body.refresh_token
+      }, err => {
+        done(err, user);
+      });
+    })
+  } else {
+    setImmediate(() => done(null, user));
   }
 }
 

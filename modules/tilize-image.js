@@ -18,7 +18,8 @@ var geoCoords = require('./geo-coords');
  * @param  {Function} callback
  */
 function tilizeImage (filename, tileSize, overlap, options, callback){
-  var params = null; // this is temporarily for Sentine-2 data
+  var params = null; // temporary code for Sentine-2 data
+  options = options || {};
   var tile_wid = tileSize;
   var tile_hei = tileSize;
   var step_x = tile_wid - overlap;

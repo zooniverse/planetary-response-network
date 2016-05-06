@@ -12,7 +12,8 @@
     "consumer": "nodemon generator/main.js",
     "start": "npm run producer & npm run consumer",
     "keygen": "openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj '/C=GB/ST=/L=/O=Zooniverse/OU=/CN=localhost' && openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt && rm server.csr && echo 'Generated key server.key, certificate server.crt'",
-    "test": "mocha"
+    "test": "mocha",
+    "tilize": "node tilize.js"
   },
   "dependencies": {
     "async": "~1.5.2",
@@ -48,7 +49,7 @@
     "togeojson": "^0.13.0",
     "utm-latlng": "^1.0.3",
     "xmlhttprequest-cookie": "^0.9.4",
-    "yargs": "^3.31.0"
+    "yargs": "^4.6.0"
   },
   "devDependencies": {
     "nodemon": "^1.9.0",

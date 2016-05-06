@@ -13,7 +13,7 @@ function cli (yargs) {
 
   return yargs
     .usage('$0 <options> image1 [image2...]')
-    .example('generate-manifest *.jpeg --images-per-subject 2', 'Generate a manifest from all jpeg files in current directory, grouping images into pairs for the subjects. Use this when your tile filenames are prefixed by location (e.g. 0_0, 0_1, etc)')
+    .example('generate-manifest *.jpeg --images-per-subject 2', 'Generate a manifest from all jpeg files in current directory, grouping images into pairs for the subjects. Use this when your tile filenames are prefixed by location (e.g. 0_0, 0_1, etc), or if you\'re manually listing tiles in the required order without using wildcards')
     .example('generate-manifest *.jpeg --images-per-subject 2 --interleave', 'Generate a manifest from all jpeg files in current directory. Given 10 images, pairs will be as follows: 1 & 6, 2 & 7, 3 & 8, 4 & 9, 5 & 10. Use this when your tile filenames are prefixed with their source image\'s filename')
     .option('images-per-subject', {
       describe: 'How many images to add to each subject',

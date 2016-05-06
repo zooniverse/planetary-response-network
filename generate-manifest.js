@@ -33,6 +33,11 @@ function cli (yargs) {
     .option('outfile', {
       describe: 'File to which CSV data should be written. Omit to use stdout'
     })
+    .option('allow-missing', {
+      describe: 'Don\'t quit for missing files',
+      boolean: true,
+      default: false
+    })
     .demand(demand)
     .check(argv => {
       // Convenience named positional args array not initialised yet, handle it ourselves
@@ -46,6 +51,13 @@ function cli (yargs) {
 }
 
 function run (argv) {
+  // Check for missing images
+  for (let image of argv.images) {
+    if (!fs.existsSync(image) && !argv.allowMissing) {
+      console.error('Image %s does not exist', image);
+      process.exit(1);
+    }
+  }
   // Create image headings
   let csvHeader = [];
   for (let i = 0; i < argv.imagesPerSubject; i++) {

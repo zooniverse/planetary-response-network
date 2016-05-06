@@ -78,7 +78,6 @@ function translate(params, callback) {
 }
 
 function run(command, paramsArray, callback) {
-  console.log('run()', paramsArray);
   const spawnProcess = spawn(command, paramsArray);
 
   spawnProcess.stdout.on('data', (data) => {

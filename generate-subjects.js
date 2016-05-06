@@ -151,7 +151,18 @@ function fetchSentinelData() {
   // require('./modules/sentinel-api').fetchDataFromCopernicus(params, function(err,result) {
   // }); // METHOD #1
 
-  const sentinel = new Sentinel(aoi, argv.project, argv.subjectSet, status);
+  const sentinel = new Sentinel({
+    aoi: aoi,
+    tileSize: argv.tileSize,
+    tileOverlap: argv.tileOverlap,
+    imOptions: {
+      equalize: argv.equalize,
+      label: argv.labels ? argv.labels[0] : null, // 'image' + (i + 1), // Todo: maybe enable this for a future auto-label option?
+      labelPos: argv.labelPos
+    },
+    status: status
+  });
+
   sentinel.fetchData( function(err, result) {
     sentinel.processData( function(err, result) {
       if(err) throw err;

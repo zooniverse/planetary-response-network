@@ -94,8 +94,6 @@ class GridSquare {
 
     let outfile = `${this.path}/composite.tif`;
 
-    // create RGB composite image
-
     // set up merge and translate parameters
     let mergeParams = {
       verbose: false,
@@ -114,13 +112,11 @@ class GridSquare {
       outfile: outfile.replace(/composite/g, 'composite_scaled')
     }
 
-    async.series([
-      async.apply(gdalUtils.merge, mergeParams),
-      async.apply(gdalUtils.translate, translateParams)
-    ], (err, result) => {
-      if(err) callback(err);
-      console.log('RESULT = ', result);
-      callback(null, result[result.length-1]);
+    gdalUtils.merge(mergeParams, (err, result) => {
+      gdalUtils.translate(translateParams, (err, result) => {
+        if(err) callback(err);
+        callback(null, result);
+      });
     });
 
   }
@@ -176,12 +172,13 @@ class GridSquare {
     async.map(fileList, function(file, callback) {
       let awsKey = `${path}/${file}`;
       let dest = `./data/${awsKey}`;
-      if(fs.existsSync(dest)) {
-        console.log('Using cached image. Note: Caching is currently hard-coded!'); // Note: Hard coded caching! Fix when possible.
-        callback(null);
-      } else {
-        downloadFromS3(bucket, awsKey, dest, callback);
-      }
+      downloadFromS3(bucket, awsKey, dest, callback);
+      // if(fs.existsSync(dest)) {
+      //   console.log('Using cached image. Note: Caching is currently hard-coded!'); // Note: Hard coded caching! Fix when possible.
+      //   callback(null);
+      // } else {
+      //   downloadFromS3(bucket, awsKey, dest, callback);
+      // }
     }.bind(path), callback);
   }
 
@@ -190,23 +187,32 @@ class GridSquare {
 ///////////////////////////// SENTINEL MOSAIC //////////////////////////////////
 
 class SentinelMosaic {
-  constructor(aoi, projectId, subjectSetId, status) {
-    this.aoi = aoi;
-    this.projectId = projectId;
-    this.subjectSetId = subjectSetId;
-    this.status = status;
+  constructor(options) {
+    this.aoi = options.aoi;
+    this.tileSize = options.tileSize;
+    this.tileOverlap = options.tileOverlap;
+    this.imOptions = {
+      equalize: options.imOptions.equalize,
+      label: options.imOptions.label,
+      labelPos: options.imOptions.labelPos
+    }
+    this.status = options.status;
+
     this.gridSquares = [];
   }
 
   fetchData(callback) {
     console.log('Fetching data...');
     let mgrsTiles = this.boundsToMgrsTiles(this.aoi.bounds);
+    console.log('Using MGRS tiles: ', mgrsTiles);
     this.gridSquares = mgrsTiles.map((mgrsPosition, i) => {
       let mgrs = this.splitMgrsPosition(mgrsPosition);
       return new GridSquare(mgrs.gridZone, mgrs.latBand, mgrs.squareId);
     });
-    async.forEachOf(this.gridSquares, function(gridSquare, i, callback) {
+    console.log('NUMBER OF GRID SQUARES = ', this.gridSquares.length);
+    async.mapSeries(this.gridSquares, function(gridSquare, i, callback) {
       gridSquare.downloadData( function(err, result) {
+        console.log('downloadData callback(), result = ', result);
         if(err) throw err;
         console.log(' Finished executing downloadData()');
         callback(null);
@@ -221,18 +227,13 @@ class SentinelMosaic {
     console.log('processData()');
     async.mapSeries(this.gridSquares, function(item, callback){
       item.createRGBComposite( function(err,imgFilename) {
-        let params = {
-          cornerCoords: item.getCornerCoords(),
-          width: item.imgMeta.width,
-          height: item.imgMeta.height
-        };
         console.log('Tilizing images...');
-        tilizeImage.tilize(imgFilename, 480, 160, params, function(err,result) {
+        tilizeImage.tilize(imgFilename, this.tileSize, this.tileOverlap, this.imOptions, function(err,result) {
           if(err) throw err;
           callback(null, result);
         });
-      });
-    }, function(err, results) {
+      }.bind(this));
+    }.bind(this), function(err, results) {
       if(err) throw err;
       callback(null, results);
     });

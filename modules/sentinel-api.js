@@ -30,8 +30,8 @@ function downloadFromS3(bucket, key, dest, callback) {
     req.on('httpDone', function(resp) {
       // console.log('resp: ', JSON.parse(resp.httpResponse.body) );
       file.end();
-      console.log('Finished downloading %s', resp.request.params.Key);
-      callback(null, resp);
+      console.log('Finished downloading %s', dest);//resp.request.params.Key);
+      callback(null, dest);
     }).send();
   });
 }
@@ -63,36 +63,47 @@ class GridSquare {
       this.getTileInfoKeysAtPosition.bind(this),
       this.pickLatestTileInfoFile.bind(this),
       this.downloadImagesFromS3.bind(this)
-    ], callback);
+    ], (err, result) => {
+      callback(null, result);
+    });
   }
 
   pickLatestTileInfoFile(tileInfoKeys, callback) {
     console.log('pickLatestTileInfoFile()');
     let latestTileInfoKey = tileInfoKeys.sort()[tileInfoKeys.length-3].Prefix; // get latest images only
-    downloadFromS3(bucket, latestTileInfoKey, 'data/' + latestTileInfoKey, function(err, resp) {
-      if (err) throw err;
-      let data = JSON.parse(resp.httpResponse.body);
-      this.imgMeta = { tileGeometry: data.tileGeometry.coordinates, cloudyPixelPercentage: data.cloudyPixelPercentage };
-      this.path = path.normalize('./data/'+data.path); // get path to image files
-      callback(null, data.path);
-    }.bind(this));
+    let dest = 'data/' + latestTileInfoKey;
+
+    downloadFromS3(bucket, latestTileInfoKey, dest, (err, tileInfoFile) => {
+      if(err) callback(err);
+      let data = fs.readFileSync(tileInfoFile);
+      data = JSON.parse(data);
+
+      this.path = path.normalize(data.path); // get path to image files
+      this.imgMeta = {
+        tileGeometry: data.tileGeometry.coordinates,
+        cloudyPixelPercentage: data.cloudyPixelPercentage
+      };
+      callback(null);
+    });
+
   }
 
   createRGBComposite(callback) {
-    console.log('createRGBComposite()'); // DEBUG
-    let files = fs.readdirSync(this.path);
+    console.log('createRGBComposite(), (needs appended ./data) this.path = ', this.path); // DEBUG
+    let filePath = path.normalize('./data/'+this.path); // To do: this is a bit awkward because this.path is really the AWS S3 key that doubles as the local path (sans ./data prefix)
+    let files = fs.readdirSync(filePath);
     var bandR, bandG, bandB = '';
     for(let file of files) {
-      if(file.match(/B02.jp2$/i)){ bandB = `${this.path}/${file}` };
-      if(file.match(/B03.jp2$/i)){ bandG = `${this.path}/${file}` };
-      if(file.match(/B04.jp2$/i)){ bandR = `${this.path}/${file}` };
+      if(file.match(/B02.jp2$/i)){ bandB = `${filePath}/${file}` };
+      if(file.match(/B03.jp2$/i)){ bandG = `${filePath}/${file}` };
+      if(file.match(/B04.jp2$/i)){ bandR = `${filePath}/${file}` };
     }
 
     if( !bandB && !bandG && !bandR ) {
       callback('Error: Missing at least one band.');
     }
 
-    let outfile = `${this.path}/composite.tif`;
+    let outfile = `${filePath}/composite.tif`;
 
     // set up merge and translate parameters
     let mergeParams = {
@@ -161,25 +172,29 @@ class GridSquare {
   /**
    * Downloads JP2 images for red, green, and blue channels
    */
-  downloadImagesFromS3(path, callback) {
-    console.log('downloadImagesFromS3()', path); // DEBUG
+  downloadImagesFromS3(callback) {
+    console.log('downloadImagesFromS3()', this.path); // DEBUG
     let fileList = [
       'B02.jp2', // blue
       'B03.jp2', // green
       'B04.jp2', // red
     ];
 
-    async.map(fileList, function(file, callback) {
-      let awsKey = `${path}/${file}`;
+    async.map(fileList, (file, callback) => {
+      let awsKey = `${this.path}/${file}`;
       let dest = `./data/${awsKey}`;
-      downloadFromS3(bucket, awsKey, dest, callback);
-      // if(fs.existsSync(dest)) {
-      //   console.log('Using cached image. Note: Caching is currently hard-coded!'); // Note: Hard coded caching! Fix when possible.
-      //   callback(null);
-      // } else {
-      //   downloadFromS3(bucket, awsKey, dest, callback);
-      // }
-    }.bind(path), callback);
+      // downloadFromS3(bucket, awsKey, dest, callback);
+      if(fs.existsSync(dest)) {
+        console.log('Using cached image. Note: Caching is currently hard-coded!'); // Note: Hard coded caching! Fix when possible.
+        callback(null, dest);
+      } else {
+        downloadFromS3(bucket, awsKey, dest, function(err, result) {
+          if(err) callback(err);
+          callback(null, dest);
+        });
+      }
+    }, callback);
+
   }
 
 } // end of class
@@ -204,28 +219,30 @@ class SentinelMosaic {
   fetchData(callback) {
     console.log('Fetching data...');
     let mgrsTiles = this.boundsToMgrsTiles(this.aoi.bounds);
+
+    if(mgrsTiles.length > 4) {
+      callback('ERROR: Only 4 MGRS tiles per AOI allowed. Reduce the size of the region.');
+    }
     console.log('Using MGRS tiles: ', mgrsTiles);
     this.gridSquares = mgrsTiles.map((mgrsPosition, i) => {
       let mgrs = this.splitMgrsPosition(mgrsPosition);
       return new GridSquare(mgrs.gridZone, mgrs.latBand, mgrs.squareId);
     });
-    console.log('NUMBER OF GRID SQUARES = ', this.gridSquares.length);
-    async.mapSeries(this.gridSquares, function(gridSquare, i, callback) {
-      gridSquare.downloadData( function(err, result) {
-        console.log('downloadData callback(), result = ', result);
-        if(err) throw err;
-        console.log(' Finished executing downloadData()');
-        callback(null);
-      });
-    }, function(err) {
+    async.mapSeries(this.gridSquares,
+      function(gridSquare, callback) {
+        gridSquare.downloadData(callback);
+    }, function(err, results) {
       if(err) throw err;
-      callback(null);
+      callback(null, results);
     }.bind(this));
   }
 
   processData(callback) {
     console.log('processData()');
+    // console.log('returning before i do anything...'); // -- STI
+    // return
     async.mapSeries(this.gridSquares, function(item, callback){
+      console.log('item = ', item);
       item.createRGBComposite( function(err,imgFilename) {
         console.log('Tilizing images...');
         tilizeImage.tilize(imgFilename, this.tileSize, this.tileOverlap, this.imOptions, function(err,result) {

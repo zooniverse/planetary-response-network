@@ -29,7 +29,7 @@ const argv = yargs
   .describe('project',       'ID of target project')
   .describe('subject-set',   'ID of target subject set')
   .describe('user-id',       'ID of Panoptes user to run job as')
-  .describe('aoi',          'KML file containing an area of interest for mosaic provider')
+  .describe('aoi',           'KML file containing an area of interest for mosaic provider')
   .default('tile-size',      480)
   .default('tile-overlap',   160)
   .default('equalize',       false)
@@ -164,9 +164,11 @@ function fetchSentinelData() {
   });
 
   sentinel.fetchData( function(err, result) {
+    if(err) throw err;
     sentinel.processData( function(err, result) {
       if(err) throw err;
-      console.log('RESULT: ', result);
+      // results should contain arrays of tiles files names for each image
+      // do something with results
       process.exit(0);
     });
   });

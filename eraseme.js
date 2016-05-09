@@ -1,21 +1,37 @@
-var spawn = require('child_process').spawn;
+'use strict';
+var async = require('async');
 
-const spawnProcess = spawn('gdal_merge.py', [
-  '-n', 0, '-a_nodata', 0, '-separate', '-of', 'GTiff',
-  '-o', '/Volumes/MBONGWANA/composite.tif',
-  '/Users/sascha/Documents/Zooniverse/PRN/planetary-response-network/data/tiles/45/R/UL/2016/4/13/0/B04.jp2',
-  '/Users/sascha/Documents/Zooniverse/PRN/planetary-response-network/data/tiles/45/R/UL/2016/4/13/0/B03.jp2',
-  '/Users/sascha/Documents/Zooniverse/PRN/planetary-response-network/data/tiles/45/R/UL/2016/4/13/0/B02.jp2'
-]);
+class GridSquare {
+  constructor(path) {
+    this.path = path;
+    this.images = ['img1', 'img2', 'img3'];
+    for(let i in this.images ) {
+      this.images[i] = this.path + '/' + this.images[i];
+    }
+  }
 
-spawnProcess.stdout.on('data', (data) => {
-  process.stdout.write(data.toString());
+  doSomething(callback) {
+    console.log('doSomething(): Doing something to ', this);
+    callback(null, this.images);
+  }
+
+}
+
+let mgrsTiles = ['45RUL', '45RTL'];
+let gridSquares = mgrsTiles.map( (mgrsPosition, i) => {
+  return new GridSquare('./data/' + mgrsPosition);
 });
 
-spawnProcess.stderr.on('data', (data) => {
-  console.log('stderr: %s', data.toString());
+
+// console.log('gridSquares = ', gridSquares);
+
+
+async.mapSeries(gridSquares, doSomethingWrapper, function(err, result) {
+  console.log('FINISHED with result ', result);
 });
 
-spawnProcess.on('close', (code) => {
-  console.log('process ended with code %s', code);
-});
+
+function doSomethingWrapper(item, callback) {
+  item.doSomething(callback);
+  // callback(null, item.images);
+}

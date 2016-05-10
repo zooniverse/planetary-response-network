@@ -30,7 +30,7 @@ function downloadFromS3(bucket, key, dest, callback) {
     req.on('httpDone', function(resp) {
       // console.log('resp: ', JSON.parse(resp.httpResponse.body) );
       file.end();
-      console.log('Finished downloading %s', dest);//resp.request.params.Key);
+      console.log('  Finished downloading %s', dest);//resp.request.params.Key);
       callback(null, dest);
     }).send();
   });
@@ -53,12 +53,12 @@ class GridSquare {
     this.gridZone = gridZone;
     this.latBand = latBand;
     this.squareId = squareId;
-    this.path = null;   // the path to the instance's own data directory
+    this.awsKey = null;   // the path to the instance's own data directory
     this.imgMeta = {};  // a place to store important image data
   }
 
   downloadData(callback) {
-    console.log('downloadData()'); // DEBUG
+    // console.log('downloadData()'); // DEBUG
     async.waterfall([
       this.getTileInfoKeysAtPosition.bind(this),
       this.pickLatestTileInfoFile.bind(this),
@@ -69,16 +69,20 @@ class GridSquare {
   }
 
   pickLatestTileInfoFile(tileInfoKeys, callback) {
-    console.log('pickLatestTileInfoFile()');
+    // console.log('pickLatestTileInfoFile()');
     let latestTileInfoKey = tileInfoKeys.sort()[tileInfoKeys.length-3].Prefix; // get latest images only
-    let dest = 'data/' + latestTileInfoKey;
+    let destPath = path.dirname(latestTileInfoKey);
+    let destFile = path.basename(latestTileInfoKey);
+    let dest = path.normalize('./data/' + destPath.replace(/\//g, '_') + '/' + destFile);
+
+    console.log('DEST = ', dest);
 
     downloadFromS3(bucket, latestTileInfoKey, dest, (err, tileInfoFile) => {
       if(err) callback(err);
       let data = fs.readFileSync(tileInfoFile);
       data = JSON.parse(data);
 
-      this.path = path.normalize(data.path); // get path to image files
+      this.awsKey = path.normalize(data.path); // get path to image files
       this.imgMeta = {
         tileGeometry: data.tileGeometry.coordinates,
         cloudyPixelPercentage: data.cloudyPixelPercentage
@@ -89,8 +93,9 @@ class GridSquare {
   }
 
   createRGBComposite(callback) {
-    console.log('createRGBComposite(), (needs appended ./data) this.path = ', this.path); // DEBUG
-    let filePath = path.normalize('./data/'+this.path); // To do: this is a bit awkward because this.path is really the AWS S3 key that doubles as the local path (sans ./data prefix)
+    // console.log('createRGBComposite(), (needs appended ./data) this.awsKey = ', this.awsKey); // DEBUG
+    let filePath = path.normalize('./data/' + this.awsKey.replace(/\//g, '_') ); // To do: this is a bit awkward because this.awsKey is really the AWS S3 key that doubles as the local path (sans ./data prefix)
+    console.log('FILE PATH = ', filePath);
     let files = fs.readdirSync(filePath);
     var bandR, bandG, bandB = '';
     for(let file of files) {
@@ -155,7 +160,7 @@ class GridSquare {
   *
   */
   getTileInfoKeysAtPosition(callback) {
-    console.log('getTileInfoKeysAtPosition()'); // DEBUG
+    // console.log('getTileInfoKeysAtPosition()'); // DEBUG
     // Get list of available tileInfo.json files
     let params = {
       Bucket: bucket,
@@ -173,7 +178,7 @@ class GridSquare {
    * Downloads JP2 images for red, green, and blue channels
    */
   downloadImagesFromS3(callback) {
-    console.log('downloadImagesFromS3()', this.path); // DEBUG
+    // console.log('downloadImagesFromS3()', this.awsKey); // DEBUG
     let fileList = [
       'B02.jp2', // blue
       'B03.jp2', // green
@@ -181,8 +186,8 @@ class GridSquare {
     ];
 
     async.map(fileList, (file, callback) => {
-      let awsKey = `${this.path}/${file}`;
-      let dest = `./data/${awsKey}`;
+      let awsKey = `${this.awsKey}/${file}`;
+      let dest = `./data/${this.awsKey.replace(/\//g, '_')}/${file}`;
       // downloadFromS3(bucket, awsKey, dest, callback);
       if(fs.existsSync(dest)) {
         console.log('Using cached image. Note: Caching is currently hard-coded!'); // Note: Hard coded caching! Fix when possible.
@@ -212,12 +217,12 @@ class SentinelMosaic {
       labelPos: options.imOptions.labelPos
     }
     this.status = options.status;
-
     this.gridSquares = [];
   }
 
   fetchData(callback) {
     console.log('Fetching data...');
+    this.status.update('fetching_mosaics', 'in-progress');
     let mgrsTiles = this.boundsToMgrsTiles(this.aoi.bounds);
 
     if(mgrsTiles.length > 4) {
@@ -232,33 +237,41 @@ class SentinelMosaic {
       function(gridSquare, callback) {
         gridSquare.downloadData(callback);
     }, function(err, results) {
-      if(err) throw err;
+      if(err) {
+        this.status.update('fetching_mosaics', 'error');
+        throw err;
+      }
+      this.status.update('fetching_mosaics', 'done');
       callback(null, results);
     }.bind(this));
   }
 
   processData(callback) {
-    console.log('processData()');
-    // console.log('returning before i do anything...'); // -- STI
-    // return
-    async.mapSeries(this.gridSquares, function(item, callback){
-      console.log('item = ', item);
-      item.createRGBComposite( function(err,imgFilename) {
-        console.log('Tilizing images...');
-        tilizeImage.tilize(imgFilename, this.tileSize, this.tileOverlap, this.imOptions, function(err,result) {
-          if(err) throw err;
-          callback(null, result);
+    // console.log('processData()'); // DEBUG
+    this.status.update('tilizing_mosaics', 'in-progress');
+    async.mapSeries(this.gridSquares,
+      (item, callback) => {
+        item.createRGBComposite( (err,imgFilename) => {
+          console.log('Tilizing images...');
+          tilizeImage.tilize(imgFilename, this.tileSize, this.tileOverlap, this.imOptions, function(err,result) {
+            if(err) throw err;
+            callback(null, result);
+          });
         });
-      }.bind(this));
-    }.bind(this), function(err, results) {
-      if(err) throw err;
+
+    }, (err, results) => {
+      if(err) {
+        this.status.update('tilizing_mosaics', 'error');
+        throw err;
+      }
+      this.status.update('tilizing_mosaics', 'done');
       callback(null, results);
     });
   }
 
   // Take bounds and return a list of Mgrs tiles
   boundsToMgrsTiles(bounds) {
-    console.log('boundsToMgrsTiles()'); // DEBUG
+    // console.log('boundsToMgrsTiles()'); // DEBUG
     if(bounds.length < 0) {
       console.log('No points!');
       return null;

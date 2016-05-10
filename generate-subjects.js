@@ -160,7 +160,7 @@ function fetchSentinelData() {
       label: argv.labels ? argv.labels[0] : null, // 'image' + (i + 1), // Todo: maybe enable this for a future auto-label option?
       labelPos: argv.labelPos
     },
-    status: status
+    status: new Status(argv.jobId)
   });
 
   sentinel.fetchData( function(err, result) {

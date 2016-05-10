@@ -77,6 +77,7 @@ const status = new Status(argv.jobId);
 
 // Create mosaic instances from provided URLs
 switch (argv.provider){
+  // TO DO: 'file' and 'planet-api' should use different functions
   case 'file':       fetchPlanetData(); break;    // use local file source
   case 'planet-api': fetchPlanetData(); break;    // use Planet Labs API (S3 bucket)
   case 'sentinel-2': fetchSentinelData(); break;  // use Sentinel-2 data (S3 bucket)
@@ -109,6 +110,7 @@ function fetchPlanetData() {
 
   // Get user
   User.find(argv.userId, (err, user) => {
+    console.log('USER FOUND');
     if (err) throw err;
     // Create and upload subjects
     let args = {

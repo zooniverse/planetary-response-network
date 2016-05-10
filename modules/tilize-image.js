@@ -22,9 +22,8 @@ function tilizeImage (filename, tileSize, overlap, options, callback){
   options = options || {};
   var tile_wid = tileSize;
   var tile_hei = tileSize;
-  console.log('CAUTION: DEBUG OPTIONS HARD-CODED!!!!');
-  var step_x = 8 * tile_wid - overlap; // Debug options enabled!!!! --STI
-  var step_y = 8 * tile_hei - overlap;
+  var step_x = tile_wid - overlap;
+  var step_y = tile_hei - overlap;
 
   var basename = path.basename(filename).split('.')[0]
   var dirname  = path.dirname(filename)

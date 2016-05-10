@@ -68,20 +68,12 @@ class GridSquare {
     });
   }
 
-  pickLatestTileInfoFile(tileInfoKeys, callback) {
-    // console.log('pickLatestTileInfoFile()');
-    let latestTileInfoKey = tileInfoKeys.sort()[tileInfoKeys.length-3].Prefix; // get latest images only
-    let destPath = path.dirname(latestTileInfoKey);
-    let destFile = path.basename(latestTileInfoKey);
-    let dest = path.normalize('./data/' + destPath.replace(/\//g, '_') + '/' + destFile);
-
-    console.log('DEST = ', dest);
-
-    downloadFromS3(bucket, latestTileInfoKey, dest, (err, tileInfoFile) => {
+  getImagesFromURI(key, callback) {
+    let dest = path.normalize('./data/' + path.dirname(key).replace(/\//g, '_') + '/tileInfo.json' );
+    downloadFromS3(bucket, key, dest, (err, tileInfoFile) => {
       if(err) callback(err);
       let data = fs.readFileSync(tileInfoFile);
       data = JSON.parse(data);
-
       this.awsKey = path.normalize(data.path); // get path to image files
       this.imgMeta = {
         tileGeometry: data.tileGeometry.coordinates,
@@ -89,6 +81,15 @@ class GridSquare {
       };
       callback(null);
     });
+  }
+
+  pickLatestTileInfoFile(tileInfoKeys, callback) {
+    console.log('pickLatestTileInfoFile()');
+    let latestTileInfoKey = tileInfoKeys.sort()[tileInfoKeys.length-1] + '/tileInfo.json'; // get latest images only
+    let destPath = path.dirname(latestTileInfoKey);
+    let destFile = path.basename(latestTileInfoKey);
+    let dest = path.normalize('./data/' + destPath.replace(/\//g, '_') + '/' + destFile);
+    this.getImagesFromURI(latestTileInfoKey, callback);
 
   }
 
@@ -170,7 +171,14 @@ class GridSquare {
     }
     s3.listObjects( params, function(err, data) {
       if(err) throw err;
-      callback(null, data.CommonPrefixes);
+      console.log('data.CommonPrefixes = ', data.CommonPrefixes);
+      let matchingLocations = [];
+      for(let index in data.CommonPrefixes) {
+        // console.log('PREFIX = ', data.CommonPrefixes[index].Prefix);
+        matchingLocations.push( path.dirname( data.CommonPrefixes[index].Prefix ) );
+      }
+      // callback(null, data.CommonPrefixes);
+      callback(null, matchingLocations);
     });
   }
 

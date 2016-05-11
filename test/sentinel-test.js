@@ -1,7 +1,7 @@
 'use strict';
 var async = require('async');
 
-class GridSquare {
+class SentinelMGRSTile {
   constructor(path) {
     this.path = path;
     this.images = ['img1', 'img2', 'img3'];
@@ -19,7 +19,7 @@ class GridSquare {
 
 let mgrsTiles = ['45RUL', '45RTL'];
 let gridSquares = mgrsTiles.map( (mgrsPosition, i) => {
-  return new GridSquare('./data/' + mgrsPosition);
+  return new SentinelMGRSTile('./data/' + mgrsPosition);
 });
 
 

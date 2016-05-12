@@ -31,7 +31,6 @@ function downloadFromS3(bucket, key, dest, callback) {
   });
 }
 
-/////////////////////////////// GRID SQUARE ////////////////////////////////////
 class SentinelMGRSTile {
 
   /**
@@ -41,11 +40,18 @@ class SentinelMGRSTile {
    * @param {String} squareId  Two letters designating a row and column within the GZD corresponding to a 100^2 km region
    */
 
-  constructor(gridZone, latBand, squareId) {
-    this.gridZone = gridZone;
-    this.latBand = latBand;
-    this.squareId = squareId;
-    this.awsKey = null;   // the path to the instance's own data directory
+  constructor(options) {
+    if(options.path) {
+      this.awsKey = options.path.replace(/\/$/, ''); // remove trailing slashes
+      console.log('   Using Path...');
+    } else {
+      console.log('   Using MGRS data...');
+      this.gridZone = options.gridZone;
+      this.latBand = options.latBand;
+      this.squareId = options.squareId;
+      this.awsKey = null;
+    }
+
     this.imgMeta = {};  // a place to store important image data
   }
 
@@ -61,12 +67,13 @@ class SentinelMGRSTile {
   }
 
   getImagesFromURI(key, callback) {
-    let dest = path.normalize('./data/' + path.dirname(key).replace(/\//g, '_') + '/tileInfo.json' );
+    console.log('getImagesFromURI(), key = ', key);
+    let dest = path.join('./data', path.dirname(key).replace(/\//g, '_'), 'tileInfo.json' );
     downloadFromS3(bucket, key, dest, (err, tileInfoFile) => {
       if(err) callback(err);
       let data = fs.readFileSync(tileInfoFile);
       data = JSON.parse(data);
-      this.awsKey = path.normalize(data.path); // get path to image files
+      this.awsKey = path.normalize(data.path).replace(/\/$/, ''); // get path to image files (remove trailing slashes)
       this.imgMeta = {
         tileGeometry: data.tileGeometry.coordinates,
         cloudyPixelPercentage: data.cloudyPixelPercentage
@@ -80,21 +87,21 @@ class SentinelMGRSTile {
     let latestTileInfoKey = tileInfoKeys.sort()[tileInfoKeys.length-1] + '/tileInfo.json'; // get latest images only
     let destPath = path.dirname(latestTileInfoKey);
     let destFile = path.basename(latestTileInfoKey);
-    let dest = path.normalize('./data/' + destPath.replace(/\//g, '_') + '/' + destFile);
+    let dest = path.join('./data', destPath.replace(/\//g, '_'), destFile);
     this.getImagesFromURI(latestTileInfoKey, callback);
 
   }
 
   createRGBComposite(callback) {
     // console.log('createRGBComposite(), (needs appended ./data) this.awsKey = ', this.awsKey); // DEBUG
-    let filePath = path.normalize('./data/' + this.awsKey.replace(/\//g, '_') ); // To do: this is a bit awkward because this.awsKey is really the AWS S3 key that doubles as the local path (sans ./data prefix)
+    let filePath = path.join('./data', this.awsKey.replace(/\//g, '_') ); // To do: this is a bit awkward because this.awsKey is really the AWS S3 key that doubles as the local path (sans ./data prefix)
     console.log('FILE PATH = ', filePath);
     let files = fs.readdirSync(filePath);
     var bandR, bandG, bandB = '';
     for(let file of files) {
-      if(file.match(/B02.jp2$/i)){ bandB = `${filePath}/${file}` };
-      if(file.match(/B03.jp2$/i)){ bandG = `${filePath}/${file}` };
-      if(file.match(/B04.jp2$/i)){ bandR = `${filePath}/${file}` };
+      if(file.match(/B02.jp2$/i)){ bandB = path.join(filePath, file) };
+      if(file.match(/B03.jp2$/i)){ bandG = path.join(filePath, file) };
+      if(file.match(/B04.jp2$/i)){ bandR = path.join(filePath, file) };
     }
 
     if( !bandB && !bandG && !bandR ) {
@@ -180,14 +187,15 @@ class SentinelMGRSTile {
   downloadImagesFromS3(callback) {
     // console.log('downloadImagesFromS3()', this.awsKey); // DEBUG
     let fileList = [
-      'B02.jp2', // blue
-      'B03.jp2', // green
-      'B04.jp2', // red
+      'tileInfo.json', // tile metadata
+      'B02.jp2',       // blue
+      'B03.jp2',       // green
+      'B04.jp2',       // red
     ];
 
     async.map(fileList, (file, callback) => {
-      let awsKey = `${this.awsKey}/${file}`;
-      let dest = `./data/${this.awsKey.replace(/\//g, '_')}/${file}`;
+      let awsKey = path.join(this.awsKey, file);
+      let dest = path.join('./data', this.awsKey.replace(/\//g, '_'), file);
       // downloadFromS3(bucket, awsKey, dest, callback);
       if(fs.existsSync(dest)) {
         console.log('Using cached image. Note: Caching is currently hard-coded!'); // Note: Hard coded caching! Fix when possible.

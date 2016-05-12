@@ -38,7 +38,11 @@ class SentinelMosaic {
     console.log('Using MGRS tiles: ', mgrsTiles);
     this.gridSquares = mgrsTiles.map((mgrsPosition, i) => {
       let mgrs = this.splitMgrsPosition(mgrsPosition);
-      return new SentinelMGRSTile(mgrs.gridZone, mgrs.latBand, mgrs.squareId);
+      return new SentinelMGRSTile({
+        gridZone: mgrs.gridZone,
+        latBand: mgrs.latBand,
+        squareId: mgrs.squareId
+      });
     });
     async.mapSeries(this.gridSquares,
       function(gridSquare, callback) {

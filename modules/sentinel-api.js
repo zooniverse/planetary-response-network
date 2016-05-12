@@ -62,7 +62,7 @@ class SentinelMosaic {
     this.status.update('tilizing_mosaics', 'in-progress');
     async.mapSeries(this.gridSquares,
       (item, callback) => {
-        item.createRGBComposite( (err,imgFilename) => {
+        item.createRGBComposite( (err, imgFilename) => {
           console.log('Tilizing images...');
           tilizeImage.tilize(imgFilename, this.tileSize, this.tileOverlap, this.imOptions, function(err,result) {
             if(err) throw err;

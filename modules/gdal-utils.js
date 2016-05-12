@@ -3,6 +3,7 @@
 const spawn = require('child_process').spawn;
 
 function merge(params, callback) {
+  console.log('  Running gdal_merge...');
   // build comandline parameter array
   let paramsArray = [];
   for(let key in params) {
@@ -40,12 +41,13 @@ function merge(params, callback) {
     }
   }
   run('gdal_merge.py', paramsArray, function(err, code){
-    console.log('gdal_merge finished with code %s', code);
+    // console.log('gdal_merge finished with code %s', code);
     callback(err, params.outfile);
   });
 }
 
 function translate(params, callback) {
+  console.log('  Running gdal_translate...');
   // build comandline parameter array
   let paramsArray = [];
   for(let key in params) {
@@ -72,7 +74,7 @@ function translate(params, callback) {
     }
   }
   run('gdal_translate', paramsArray, function(err, code){
-    console.log('gdal_translate finished with code %s', code);
+    // console.log('gdal_translate finished with code %s', code);
     callback(err, params.outfile);
   });
 }
@@ -89,7 +91,10 @@ function run(command, paramsArray, callback) {
   });
 
   spawnProcess.on('close', (code) => {
-    if(code !== 0) callback(code);
+    if(code !== 0) {
+      console.log('Error: %s finished with code %d', code);
+      callback(code);
+    }
     else callback(null, code);
   });
 

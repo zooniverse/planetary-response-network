@@ -15,7 +15,7 @@ const region = 'eu-central-1';
 const s3 = new AWS.S3({region: region});
 
 function downloadFromS3(bucket, key, dest, callback) {
-  console.log('downloadFromS3() {bucket: %s, key: %s, dest: %s}', bucket, key, dest); // DEBUG
+  // console.log('downloadFromS3() {bucket: %s, key: %s, dest: %s}', bucket, key, dest); // DEBUG
 
   mkdirp(path.dirname(dest), function(err) { // ensure dest dir exists
     if(err) throw err;
@@ -41,11 +41,9 @@ class SentinelMGRSTile {
    */
 
   constructor(options) {
-    if(options.path) {
+    if(options.path) { // used to download images in AWS S3 bucket pack
       this.awsKey = options.path.replace(/\/$/, ''); // remove trailing slashes
-      console.log('   Using Path...');
-    } else {
-      console.log('   Using MGRS data...');
+    } else { // use latest data from MGRS region
       this.gridZone = options.gridZone;
       this.latBand = options.latBand;
       this.squareId = options.squareId;
@@ -67,7 +65,6 @@ class SentinelMGRSTile {
   }
 
   getImagesFromURI(key, callback) {
-    console.log('getImagesFromURI(), key = ', key);
     let dest = path.join('./data', path.dirname(key).replace(/\//g, '_'), 'tileInfo.json' );
     downloadFromS3(bucket, key, dest, (err, tileInfoFile) => {
       if(err) callback(err);
@@ -83,7 +80,6 @@ class SentinelMGRSTile {
   }
 
   pickLatestTileInfoFile(tileInfoKeys, callback) {
-    console.log('pickLatestTileInfoFile()');
     let latestTileInfoKey = tileInfoKeys.sort()[tileInfoKeys.length-1] + '/tileInfo.json'; // get latest images only
     let destPath = path.dirname(latestTileInfoKey);
     let destFile = path.basename(latestTileInfoKey);
@@ -93,9 +89,8 @@ class SentinelMGRSTile {
   }
 
   createRGBComposite(callback) {
-    // console.log('createRGBComposite(), (needs appended ./data) this.awsKey = ', this.awsKey); // DEBUG
+    console.log('  Merging bands into RGB image...');
     let filePath = path.join('./data', this.awsKey.replace(/\//g, '_') ); // To do: this is a bit awkward because this.awsKey is really the AWS S3 key that doubles as the local path (sans ./data prefix)
-    console.log('FILE PATH = ', filePath);
     let files = fs.readdirSync(filePath);
     var bandR, bandG, bandB = '';
     for(let file of files) {
@@ -108,7 +103,7 @@ class SentinelMGRSTile {
       callback('Error: Missing at least one band.');
     }
 
-    let outfile = `${filePath}/composite.tif`;
+    let outfile = path.join(filePath, 'composite.tif');
 
     // set up merge and translate parameters
     let mergeParams = {

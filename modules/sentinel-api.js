@@ -31,11 +31,10 @@ class SentinelMosaic {
     console.log('Fetching data...');
     this.status.update('fetching_mosaics', 'in-progress');
     let mgrsTiles = this.boundsToMgrsTiles(this.aoi.bounds);
-
+    console.log('Using MGRS tiles: ', mgrsTiles);
     if(mgrsTiles.length > 4) {
       callback('ERROR: Only 4 MGRS tiles per AOI allowed. Reduce the size of the region.');
     }
-    console.log('Using MGRS tiles: ', mgrsTiles);
     this.gridSquares = mgrsTiles.map((mgrsPosition, i) => {
       let mgrs = this.splitMgrsPosition(mgrsPosition);
       return new SentinelMGRSTile({
@@ -80,19 +79,49 @@ class SentinelMosaic {
     });
   }
 
-  // Take bounds and return a list of Mgrs tiles
+  // Description: Takes bounds from AOI polygon and fits a rectangular grid with sampled points at every 0.4-deg interval
+  // Returns the minimum list of MGRS squares containing the AOI
   boundsToMgrsTiles(bounds) {
-    // console.log('boundsToMgrsTiles()'); // DEBUG
     if(bounds.length < 0) {
       console.log('No points!');
       return null;
     }
-    var mgrsTiles = new Array();
-    for(let point of bounds) {
-      let gridSquareId = mgrs.forward( [ point[0], point[1] ] ); // convert from lat/lng to grid square ID
-      mgrsTiles.push(gridSquareId.slice(0,5));
+
+    let mgrsTiles = new Array(),
+        latValues = [],
+        lonValues = [];
+
+    // extract lat/lon values from polygon
+    for(let i=0; i<bounds.length-1; i++) { // ignore last point in polygon (same as first)
+      lonValues.push( bounds[i][0] );
+      latValues.push( bounds[i][1] );
     }
-    return Array.from( new Set(mgrsTiles) ); // remove any duplicates
+
+    // sub-sample intervals to ensure all mgrs grid squares are registered
+    let sampledLats = this.subsampleRange(latValues),
+        sampledLons = this.subsampleRange(lonValues);
+
+    for(let lon of sampledLons) {
+      for(let lat of sampledLats) {
+        // console.log(parseFloat(lat) + ',' + parseFloat(lon) ); // DEBUG
+        let gridSquareId = mgrs.forward([lon,lat]);
+        mgrsTiles.push(gridSquareId.slice(0,5));
+      }
+    }
+
+    return Array.from( new Set( mgrsTiles.sort() ) ); // remove any duplicates
+  }
+
+  subsampleRange(values) {
+    let max = Math.max.apply(null, values),
+        min = Math.min.apply(null, values),
+        sampledValues = [],
+        step = 0.4; // set step interval small enough to not skip grid squares
+
+    for( let val = min; val <= max; val = val + step ) {
+      sampledValues.push(val);
+    }
+    return sampledValues;
   }
 
   // Note: Grid zones are designated by the UTM zone number, e.g. 45,

@@ -9,6 +9,7 @@ const https          = require('https')
 const cors           = require('cors')
 const ensureLogin    = require('./middleware/ensure-login')
 const getBuilds      = require('./middleware/get-builds')
+const deleteBuild    = require('./middleware/delete-build')
 const panoptesProxy  = require('./middleware/panoptes-proxy')
 
 // Parse options
@@ -70,6 +71,8 @@ app.post('/aois', ensureLogin, upload.single('file'), processAoi.runner({useQueu
 
 // Builds route
 app.get('/builds', ensureLogin, getBuilds)
+
+app.post('/build/delete/:build_id', ensureLogin, deleteBuild)
 
 // Proxy panoptes calls
 app.get('/projects', ensureLogin, panoptesProxy.getProjects)

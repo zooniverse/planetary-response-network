@@ -29,7 +29,7 @@ class Mosaic {
    */
   fetchQuadsForAOI(aoi, callback){
     this.status.update('fetching_mosaics', 'in-progress');
-    PlanetAPI.fetchQuadsFromAOI(aoi.bounds, this.url, this.label, (err, quads) => {
+    PlanetAPI.fetchQuadsFromAOI(aoi.bounds, this.url, this.imOptions.label, (err, quads) => {
       if (err) {
         this.status.update('fetching_mosaics', 'error');
         throw err;
@@ -37,7 +37,7 @@ class Mosaic {
       quads = quads.features.map(quad => {
         return new Quad(this, quad)
       })
-      this.status.update('fetching_mosaics', 'done');
+      // this.status.update('fetching_mosaics', 'done');
       callback(null, quads);
     });
   }
@@ -64,6 +64,7 @@ class Mosaic {
     // Fetch files
     this.fetchFilesForAOI(aoi, (err, files) => {
       if (err) return callback(err);
+      this.status.update('fetching_mosaics', 'done');
 
       // Tile em up
       this.status.update('tilizing_mosaics', 'in-progress');

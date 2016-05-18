@@ -2,7 +2,10 @@
 Create Zooniverse subjects via Planet Labs API using area of interest (AOI) queries.
 
 ## Getting Started
-Clone and `npm install`. A number of environmental variables must be set:
+
+There are few external dependencies the NPM modules expect to exist in the local environment. These are ImageMagick, Gdal, and Exiftool. The NPM packages are merely wrappers that run the local versions of these executables. Please ensure these are installed before proceeding.
+
+Once the above dependencies are installed, clone thsi repo and `npm install`. A number of environmental variables must be set:
 
 * `PLANET_API_KEY` to retrieve the mosaics. You'll need an API key from Planet Labs
 * to deploy to subjects to your Zooniverse project you'll need to [build a project](https://www.zooniverse.org/lab) and set the variables `ZOONIVERSE_USERNAME` and `ZOONIVERSE_PASSWORD` with your username and password, respectively

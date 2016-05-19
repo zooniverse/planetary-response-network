@@ -72,7 +72,7 @@ app.post('/aois', ensureLogin, upload.single('file'), processAoi.runner({useQueu
 // Builds route
 app.get('/jobs', ensureLogin, getJobs)
 
-app.post('/job/delete/:job_id', ensureLogin, deleteJob)
+app.delete('/jobs/:job_id', ensureLogin, deleteJob)
 
 // Proxy panoptes calls
 app.get('/projects', ensureLogin, panoptesProxy.getProjects)

@@ -36,8 +36,6 @@ const argv = yargs
   .choices('provider',       ['planet-api', 'sentinel-2', 'file'])
   .default('provider',       'planet-api')
   .default('label-pos',      'south')
-  .implies('mosaics', 'aoi')
-  .implies('aoi', 'mosaics')
   .demand([
     'project',
     'subject-set'
@@ -46,6 +44,12 @@ const argv = yargs
   .array('images')
   .array('labels')
   .check(argv => {
+    if (argv.provider === 'planet-api' && (!argv.mosaics || !argv.aoi)) {
+      throw new Error('Planet API tasks require a list of mosaics (--mosaics) and an area of interest KML file (--aoi)');
+    }
+    if (argv.provider === 'sentinel-2' && !argv.aoi) {
+      throw new Error('Sentinel2 tasks require an area of interest KML file (--aoi)');
+    }
     if (argv.mosaics && argv.labels && argv.mosaics.length != argv.labels.length) {
       throw new Error('If supplying mosaic labels, the number of labels must match the number of mosaics');
     }

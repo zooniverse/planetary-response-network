@@ -1,5 +1,4 @@
 'use strict';
-
 const async          = require('async');
 const csvStringify   = require('csv-stringify');
 const createSubjects = require('./create-subjects');
@@ -58,7 +57,28 @@ class Manifest {
   /**
    * Generates the manifest subjects, each with one image from each mosaic. This assumes that the tiles in each mosaic are in order and of the same geographic region
    * @param  {Function}  callback
+   * @returns {Object[]}  subjects - Metadata from subjects
+   * @returns {Object}    subjects[].metadata
+   * @returns {Object}    subjects[].metadata.upper_left
+   * @returns {Number}    subjects[].metadata.upper_left.lon - Longitude value
+   * @returns {Number}    subjects[].metadata.upper_left.lat - Latitude value
+   * @returns {Object}    subjects[].metadata.upper_right
+   * @returns {Number}    subjects[].metadata.upper_right.lon - Longitude value
+   * @returns {Number}    subjects[].metadata.upper_right.lat - Latitude value
+   * @returns {Object}    subjects[].metadata.bottom_right
+   * @returns {Number}    subjects[].metadata.bottom_right.lon - Longitude value
+   * @returns {Number}    subjects[].metadata.bottom_right.lat - Latitude value
+   * @returns {Object}    subjects[].metadata.bottom_left
+   * @returns {Number}    subjects[].metadata.bottom_left.lon - Longitude value
+   * @returns {Number}    subjects[].metadata.bottom_left.lat - Latitude value
+   * @returns {Object[]}  subjects[].metadata.locations
+   * @returns {String}    subjects[].metadata.locations[].image_uri - URI to image asset
+   * @returns {Object}    subjects[].metadata.links
+   * @returns {Number}    subjects[].metadata.links.project - Zooniverse project id
+   * @returns {Array}     subjects[].metadata.links.subject_sets
+   * @returns {Number}    subjects[].metadata.links.subject_sets[].subject_set_id - Zooniverse subject set id
    */
+
   getSubjects(callback) {
     const handler = (err, tileSets) => {
       this.status.update('tilizing_mosaics', 'done');
@@ -149,6 +169,7 @@ class Manifest {
   }
 
   deploySubjectsToPanoptes(subjects, callback) {
+    console.log('Deploying subjects to Panoptes...'); // --STI
     this.status.update('deploying_subjects', 'in-progress');
     panoptesAPI.saveSubjects(this.user, subjects, function(err){
       if(err) {

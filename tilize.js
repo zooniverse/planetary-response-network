@@ -62,7 +62,7 @@ function run (argv) {
       // Assign correct label
       let idx = argv.images.indexOf(image);
       let imageOptions = options;
-      imageOptions.label = options.labels[idx];
+      if(argv.labels) imageOptions.label = options.labels[idx];
       // Tile!
       tilize.tilize(image, argv.size, argv.overlap, imageOptions, done);
     }, done);
@@ -78,4 +78,3 @@ exports.command = 'tilize [images..]'
 exports.describe = 'Tilize GeoTIFF image(s)'
 exports.builder = yargs => cli(yargs);
 exports.handler = run;
-

@@ -8,6 +8,12 @@ const redis         = require('./lib/redis');
 const redisPubSub   = require('./lib/redis-pubsub');
 const User          = require('./lib/user-model');
 
+// for Sentinel-2 data
+const utmObj   = require('utm-latlng');
+const mgrs     = require('mgrs');
+const Sentinel = require('./modules/sentinel-api');
+
+
 // Go
 const argv = yargs
   .usage('$0 [options] <file>')
@@ -23,15 +29,13 @@ const argv = yargs
   .describe('project',       'ID of target project')
   .describe('subject-set',   'ID of target subject set')
   .describe('user-id',       'ID of Panoptes user to run job as')
-  .describe('aoi',          'KML file containing an area of interest for mosaic provider')
+  .describe('aoi',           'KML file containing an area of interest for mosaic provider')
   .default('tile-size',      480)
   .default('tile-overlap',   160)
   .default('equalize',       false)
-  .choices('provider',       ['planet-api', 'file'])
+  .choices('provider',       ['planet-api', 'sentinel-2', 'file'])
   .default('provider',       'planet-api')
   .default('label-pos',      'south')
-  .implies('mosaics', 'aoi')
-  .implies('aoi', 'mosaics')
   .demand([
     'project',
     'subject-set'
@@ -40,6 +44,12 @@ const argv = yargs
   .array('images')
   .array('labels')
   .check(argv => {
+    if (argv.provider === 'planet-api' && (!argv.mosaics || !argv.aoi)) {
+      throw new Error('Planet API tasks require a list of mosaics (--mosaics) and an area of interest KML file (--aoi)');
+    }
+    if (argv.provider === 'sentinel-2' && !argv.aoi) {
+      throw new Error('Sentinel2 tasks require an area of interest KML file (--aoi)');
+    }
     if (argv.mosaics && argv.labels && argv.mosaics.length != argv.labels.length) {
       throw new Error('If supplying mosaic labels, the number of labels must match the number of mosaics');
     }
@@ -53,6 +63,7 @@ const argv = yargs
   })
   .argv;
 
+
 console.log('ARGV = ', argv);
 
 let aoi;
@@ -62,61 +73,109 @@ if (argv.provider !== 'file') {
   aoi = new AOI(file);
   console.log('Loading AOI from KML file', file);
 }
+
 const manifestFile = 'data/'+new Date().getTime()+'.csv';
 
 // Instantiate script status tracker
 const status = new Status(argv.jobId);
 
-let mosaics;
-if (argv.provider !== 'file') {
-  // Create mosaic instances from provided URLs
-  mosaics = argv.mosaics.map((mosaic, i) => {
-    return new Mosaic({
-      provider: argv.provider,
-      url: mosaic,
-      tileSize: argv.tileSize,
-      tileOverlap: argv.tileOverlap,
-      imOptions: {
-        equalize: argv.equalize,
-        label: argv.labels ? argv.labels[i] : null, // 'image' + (i + 1), // Todo: maybe enable this for a future auto-label option?
-        labelPos: argv.labelPos
-      },
-      status: status
+// Create mosaic instances from provided URLs
+switch (argv.provider){
+  // TO DO: 'file' and 'planet-api' should use different functions
+  case 'file':       fetchPlanetData(); break;    // use local file source
+  case 'planet-api': fetchPlanetData(); break;    // use Planet Labs API (S3 bucket)
+  case 'sentinel-2': fetchSentinelData(); break;  // use Sentinel-2 data (S3 bucket)
+  default: console.log('ERROR: Invalid provider \'%s\'', argv.provider);
+}
+
+// Fetches data from Planet Labs API
+function fetchPlanetData() {
+  console.log('Using mosaic provider \'%s\'', argv.provider);
+  const status = new Status(argv.jobId);
+
+  let mosaics;
+  if (argv.provider !== 'file') {
+    // Create mosaic instances from provided URLs
+    mosaics = argv.mosaics.map((mosaic, i) => {
+      return new Mosaic({
+        provider: argv.provider,
+        url: mosaic,
+        tileSize: argv.tileSize,
+        tileOverlap: argv.tileOverlap,
+        imOptions: {
+          equalize: argv.equalize,
+          label: argv.labels ? argv.labels[i] : null, // 'image' + (i + 1), // Todo: maybe enable this for a future auto-label option?
+          labelPos: argv.labelPos
+        },
+        status: status
+      });
+    });
+  }
+
+  // Get user
+  User.find(argv.userId, (err, user) => {
+    console.log('USER FOUND');
+    if (err) throw err;
+    // Create and upload subjects
+    let args = {
+      projectId: argv.project,
+      subjectSetId: argv.subjectSet,
+      status: status,
+      user: user
+    }
+    if (argv.provider === 'file') {
+      args.images = argv.images;
+      args.equalize = argv.equalize;
+      if (argv.labels) args.labels = argv.labels;
+      args.labelPos = argv.labelPos;
+      args.tileSize = argv.tileSize;
+      args.tileOverlap = argv.tileOverlap;
+    } else {
+      args.mosaics = mosaics;
+      args.aoi = aoi;
+    }
+    const manifest = new Manifest(args);
+
+    manifest.deploy((err, result) => {
+      if (err) {
+        console.error(err);
+        process.exit(1);
+      } else {
+        status.update('finished', 'done');
+        console.log('Finished uploading subjects.');
+        process.exit(0);
+      }
+    });
+  })
+}
+
+function fetchSentinelData() {
+  console.log('Using mosaic provider \'%s\'', argv.provider);
+
+  // /* USE COPERNICUS API */
+  // var params = { bounds: aoi.bounds, cloudcoverpercentage: '[0 TO 50]', platformname: 'Sentinel-2' };
+  // require('./modules/sentinel-api').fetchDataFromCopernicus(params, function(err,result) {
+  // }); // METHOD #1
+
+  const sentinel = new Sentinel({
+    aoi: aoi,
+    tileSize: argv.tileSize,
+    tileOverlap: argv.tileOverlap,
+    imOptions: {
+      equalize: argv.equalize,
+      label: argv.labels ? argv.labels[0] : null, // 'image' + (i + 1), // Todo: maybe enable this for a future auto-label option?
+      labelPos: argv.labelPos
+    },
+    status: new Status(argv.jobId)
+  });
+
+  sentinel.fetchData( function(err, result) {
+    if(err) throw err;
+    sentinel.processData( function(err, result) {
+      if(err) throw err;
+      // results should contain arrays of tiles files names for each image
+      // do something with results
+      process.exit(0);
     });
   });
 }
-
-// Get user
-User.find(argv.userId, (err, user) => {
-  if (err) throw err;
-  // Create and upload subjects
-  let args = {
-    projectId: argv.project,
-    subjectSetId: argv.subjectSet,
-    status: status,
-    user: user
-  }
-  if (argv.provider === 'file') {
-    args.images = argv.images;
-    args.equalize = argv.equalize;
-    if (argv.labels) args.labels = argv.labels;
-    args.labelPos = argv.labelPos;
-    args.tileSize = argv.tileSize;
-    args.tileOverlap = argv.tileOverlap;
-  } else {
-    args.mosaics = mosaics;
-    args.aoi = aoi;
-  }
-  const manifest = new Manifest(args);
-
-  manifest.deploy((err, result) => {
-    if (err) {
-      console.error(err);
-      process.exit(1);
-    } else {
-      status.update('finished', 'done');
-      console.log('Finished uploading subjects.');
-      process.exit(0);
-    }
-  });
-})

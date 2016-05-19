@@ -1,12 +1,12 @@
 'use strict';
-var os             = require('os')
-var fs             = require('fs')
-var im             = require('imagemagick')
-var path           = require('path')
-var gdal           = require('gdal')
-var async          = require('async')
-var imgMeta        = require('./image-meta')
-var geoCoords      = require('./geo-coords')
+var os        = require('os');
+var fs        = require('fs');
+var im        = require('imagemagick');
+var path      = require('path');
+var gdal      = require('gdal');
+var async     = require('async');
+var imgMeta   = require('./image-meta');
+var geoCoords = require('./geo-coords');
 
 /**
  * Splits an image into tiles
@@ -18,17 +18,24 @@ var geoCoords      = require('./geo-coords')
  * @param  {Function} callback
  */
 function tilizeImage (filename, tileSize, overlap, options, callback){
+  var params = null; // temporary code for Sentine-2 data
   options = options || {};
   var tile_wid = tileSize;
   var tile_hei = tileSize;
-  var step_x = tile_wid - overlap;
-  var step_y = tile_hei - overlap;
+  console.log('WARNING: DEBUG CODE IS STILL IN PLACE!'); // --STI
+  var step_x = 8 * tile_wid - overlap;
+  var step_y = 8 * tile_hei - overlap;
 
   var basename = path.basename(filename).split('.')[0]
   var dirname  = path.dirname(filename)
-  var ds = gdal.open(filename)
-  var metadata = geoCoords.getMetadata(ds)
-  var size = metadata.size
+
+  if(params == null) {
+    var ds = gdal.open(filename)
+    var metadata = geoCoords.getMetadata(ds)
+    var size = metadata.size
+  } else {
+    var size = {x: params.width, y: params.height};
+  }
 
   // Tile creator
   var create_tile_task = function (task, done) {
@@ -39,12 +46,15 @@ function tilizeImage (filename, tileSize, overlap, options, callback){
     var outfile = dirname + '/' + basename + '_' + row + '_' + col + '.jpeg'
 
     /* Convert corner and center pixel coordinates to geo */
-    var coords = {
-      upper_left   : geoCoords.pxToWgs84(ds, offset_x,                offset_y),
-      upper_right  : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y),
-      bottom_right : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y + tile_hei),
-      bottom_left  : geoCoords.pxToWgs84(ds, offset_x,                offset_y + tile_hei),
-      center       : geoCoords.pxToWgs84(ds, offset_x + tile_wid / 2, offset_y + tile_hei / 2)
+    var coords = {};
+    if(params == null) {
+      coords = {
+        upper_left   : geoCoords.pxToWgs84(ds, offset_x,                offset_y),
+        upper_right  : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y),
+        bottom_right : geoCoords.pxToWgs84(ds, offset_x + tile_wid,     offset_y + tile_hei),
+        bottom_left  : geoCoords.pxToWgs84(ds, offset_x,                offset_y + tile_hei),
+        center       : geoCoords.pxToWgs84(ds, offset_x + tile_wid / 2, offset_y + tile_hei / 2)
+      }
     }
 
     // base tilizing arguments

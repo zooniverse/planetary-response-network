@@ -35,7 +35,7 @@ function fetchMosaicFromAOI (bounds, url, label, callback){
   fetchQuadsFromAOI(bounds, url, label, function (error, body) {
     if(error) {
       callback(error)
-    } else{
+    } else {
         var data = body
         // Should check if body.message exists (silently fails if PlanetLabs API key is invalid)
         console.log('Found ' + data.features.length + ' mosaics.');
@@ -50,9 +50,7 @@ function fetchMosaicFromAOI (bounds, url, label, callback){
 
 function fetchQuadsFromAOI (bounds, url, label, callback) {
   console.log('Fetching \"' + label + '\" quads intersecting with AOI...');
-
   var intersects = boundsToIntersects(bounds)
-
   var params = { intersects: intersects }
 
   request({

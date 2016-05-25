@@ -6,8 +6,9 @@ var clientFactory        = require('./panoptes-client-factory')
 exports.saveSubjects = saveSubjects
 
 function saveSubject(user, subject, callback) {
-  clientFactory.getClientForUser(user);
+  clientFactory.getClientForUser(user)
   .then(client => {
+    // client.update({'params.admin': true});  // careful when using admin mode!
     return client.type('subjects').create(subject).save()
   })
   .then(function(subject){
@@ -20,6 +21,5 @@ function saveSubject(user, subject, callback) {
 }
 
 function saveSubjects(user, subjects, callback){
-  // api.update({'params.admin': true});  // careful when using admin mode!
   async.eachSeries(subjects, async.apply(saveSubject, user), callback)
 }

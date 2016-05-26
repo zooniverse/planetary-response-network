@@ -10,11 +10,14 @@ const UPLOAD_PATH = path.join(__dirname,'../uploaded_aois')
 exports.runner = function (options){
   return function (req, res, next) {
 
+    var provider = req.body.provider
     var project_id = req.body.project_id
     var subject_set_id = req.body.subject_set_id
     var repeat = req.body.repeat
     var interval = req.body.interval
     var redirect_uri = req.query.redirect
+
+    console.log('USING PROVIDER: ', provider); // DEBUG CODE --STI
 
     if (options.useQueue) {
       // Create job data
@@ -48,6 +51,7 @@ exports.runner = function (options){
       var script = 'generate-subjects' //'build-status-simulator' //'generate-subjects'
       var aoi_file = req.file.path
       var job = fork(script, [
+        '--provider', provider,
         '--job-id', 'jobid.'+Math.floor(Math.random()*(9999-1000)+1000), // generate a random job id
         '--mosaics',
           // TO DO: these probably shouldn't be hard-coded

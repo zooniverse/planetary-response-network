@@ -29,15 +29,16 @@ class Mosaic {
    */
   fetchQuadsForAOI(aoi, callback){
     this.status.update('fetching_mosaics', 'in-progress');
-    PlanetAPI.fetchQuadsFromAOI(aoi.bounds, this.url, this.label, (err, quads) => {
-      if (err) {
+    PlanetAPI.fetchQuadsFromAOI(aoi.bounds, this.url, this.imOptions.label, (err, result) => {
+      if (err || !result.features) {
         this.status.update('fetching_mosaics', 'error');
-        throw err;
+        throw err ? err : 'Error: No features field in response. Double check that your API key is set properly.';
       }
-      quads = quads.features.map(quad => {
+
+      let quads = result.features.map(quad => {
         return new Quad(this, quad)
       })
-      this.status.update('fetching_mosaics', 'done');
+      // this.status.update('fetching_mosaics', 'done');
       callback(null, quads);
     });
   }
@@ -63,7 +64,8 @@ class Mosaic {
   createTilesForAOI(aoi, callback) {
     // Fetch files
     this.fetchFilesForAOI(aoi, (err, files) => {
-      if (err) return callback(err);
+      if (err) callback(err);
+      this.status.update('fetching_mosaics', 'done');
 
       // Tile em up
       this.status.update('tilizing_mosaics', 'in-progress');

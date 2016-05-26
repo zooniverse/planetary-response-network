@@ -8,7 +8,8 @@ const fs             = require('fs')
 const https          = require('https')
 const cors           = require('cors')
 const ensureLogin    = require('./middleware/ensure-login')
-const getBuilds      = require('./middleware/get-builds')
+const getJobs        = require('./middleware/get-jobs')
+const deleteJob      = require('./middleware/delete-job')
 const panoptesProxy  = require('./middleware/panoptes-proxy')
 
 // Parse options
@@ -69,10 +70,13 @@ require('./lib/auth')(app);
 app.post('/aois', ensureLogin, upload.single('file'), processAoi.runner({useQueue: argv.useQueue} ))
 
 // Builds route
-app.get('/builds', ensureLogin, getBuilds)
+app.get('/jobs', ensureLogin, getJobs)
+
+app.delete('/jobs/:job_id', ensureLogin, deleteJob)
 
 // Proxy panoptes calls
 app.get('/projects', ensureLogin, panoptesProxy.getProjects)
+app.get('/subject-sets', ensureLogin, panoptesProxy.getSubjectSets)
 
 const port = process.env.PORT || 3736
 server.listen(port, function(error){

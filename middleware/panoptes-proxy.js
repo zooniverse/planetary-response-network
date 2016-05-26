@@ -1,15 +1,11 @@
 'use strict';
-const panoptes = require('panoptes-client');
+const panoptesClientFactory = require('../modules/panoptes-client-factory');
 
 class PanoptesProxy {
   constructor() {
     // Autobind middlewares
     this.getProjects = this.getProjects.bind(this);
     this.getSubjectSets = this.getSubjectSets.bind(this);
-  }
-
-  setAuthHeader(user) {
-    panoptes.apiClient.headers.Authorization = 'Bearer ' + user.get('accessToken');
   }
 
   getPanoptesCollectionQuery(req) {
@@ -23,28 +19,27 @@ class PanoptesProxy {
   }
 
   getProjects(req, res, next) {
-    this.setAuthHeader(req.user);
+    const client = panoptesClientFactory.getClientForUser(req.user);
     const query = this.getPanoptesCollectionQuery(req);
     query.owner = req.user.get('displayName');
 
-    panoptes.apiClient.type('projects').get(query).then(
+    client.type('projects').get(query).then(
       projects => res.send(projects),
       reason => next(new Error(reason))
     );
   }
 
   getSubjectSets(req, res, next) {
-    this.setAuthHeader(req.user);
+    const client = panoptesClientFactory.getClientForUser(req.user);
     const query = this.getPanoptesCollectionQuery(req);
     if (req.query.project_id) query.project_id = req.query.project_id;
     if (req.query.workflow_id) query.workflow_id = req.query.workflow_id;
 
-    panoptes.apiClient.type('subject-sets').get().then(
+    client.type('subject_sets').get(query).then(
       projects => res.send(projects),
       reason => next(new Error(reason))
     );
   }
 }
-
 
 module.exports = new PanoptesProxy();

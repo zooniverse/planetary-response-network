@@ -35,7 +35,7 @@ class PanoptesProxy {
     if (req.query.project_id) query.project_id = req.query.project_id;
     if (req.query.workflow_id) query.workflow_id = req.query.workflow_id;
 
-    client.type('subject_sets').get().then(
+    client.type('subject_sets').get(query).then(
       projects => res.send(projects),
       reason => next(new Error(reason))
     );

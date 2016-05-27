@@ -76,6 +76,7 @@ app.delete('/jobs/:job_id', ensureLogin, deleteJob)
 
 // Proxy panoptes calls
 app.get('/projects', ensureLogin, panoptesProxy.getProjects)
+app.get('/subject-sets', ensureLogin, panoptesProxy.getSubjectSets)
 
 const port = process.env.PORT || 3736
 server.listen(port, function(error){

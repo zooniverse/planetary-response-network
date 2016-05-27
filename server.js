@@ -7,7 +7,7 @@ const path           = require('path')
 const fs             = require('fs')
 const https          = require('https')
 const cors           = require('cors')
-const ensureLogin    = require('./middleware/ensure-login')
+const auth           = require('./lib/auth')
 const getJobs        = require('./middleware/get-jobs')
 const deleteJob      = require('./middleware/delete-job')
 const panoptesProxy  = require('./middleware/panoptes-proxy')
@@ -63,21 +63,19 @@ redis.on('pmessage', function (channel, pattern, message) {
 const upload = multer({ dest: path.join(__dirname, './uploaded_aois') })
 app.use(morgan('combined'))
 
-////////////////////////////////////////////////////////////////////
-require('./lib/auth')(app);
-////////////////////////////////////////////////////////////////////
+// Setup auth
+auth.setupMiddlewares(app);
 
 // Handle AOI uploads
-app.post('/aois', ensureLogin, upload.single('file'), processAoi.runner({useQueue: argv.useQueue} ))
+app.post('/aois', auth.ensureLogin, upload.single('file'), processAoi.runner({useQueue: argv.useQueue} ))
 
-// Builds route
-app.get('/jobs', ensureLogin, getJobs)
-
-app.delete('/jobs/:job_id', ensureLogin, deleteJob)
+// Job routes
+app.get('/jobs', auth.ensureLogin, getJobs)
+app.delete('/jobs/:job_id', auth.ensureLogin, deleteJob)
 
 // Proxy panoptes calls
-app.get('/projects', ensureLogin, panoptesProxy.getProjects)
-app.get('/subject-sets', ensureLogin, panoptesProxy.getSubjectSets)
+app.get('/projects', auth.ensureLogin, panoptesProxy.getProjects)
+app.get('/subject-sets', auth.ensureLogin, panoptesProxy.getSubjectSets)
 
 const port = process.env.PORT || 3736
 server.listen(port, function(error){

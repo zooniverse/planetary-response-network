@@ -11,6 +11,7 @@ const ensureLogin    = require('./middleware/ensure-login')
 const getJobs        = require('./middleware/get-jobs')
 const deleteJob      = require('./middleware/delete-job')
 const panoptesProxy  = require('./middleware/panoptes-proxy')
+const config         = require('./config.js')
 
 // Parse options
 const argv = yargs
@@ -32,7 +33,7 @@ const app = express()
 
 // Enable CORS - TODO restrict to trusted origin URLs
 app.use(cors({
-  origin: 'https://localhost:3443',
+  origin: config.client, //'https://localhost:3443',
   credentials: true
 }))
 

@@ -9,6 +9,8 @@ class PanoptesProxy {
   }
 
   setAuthHeader(user) {
+    console.log('USER: ', user);
+    console.log('panoptes = ', panoptes);
     panoptes.apiClient.headers.Authorization = 'Bearer ' + user.get('accessToken');
   }
 

@@ -7,7 +7,7 @@ var DEFAULT_ENV = 'staging';
 var	PRN_HOSTS = {
 	production:   null, // TBD
 	development: 'https://52.38.229.223:3736',
-	staging:     'https://192.168.99.100:3736' //'https://52.38.229.223:3736',
+	staging:     'https://localhost:3736' //'https://52.38.229.223:3736',
 }
 
 var PRN_CLIENTS = {
@@ -15,6 +15,12 @@ var PRN_CLIENTS = {
 	development: 'https://52.35.80.72:3443',
 	staging:     'https://localhost:3443' //'https://52.35.80.72:3443',
 }
+
+var OAUTH_HOSTS = {
+  production: 'https://panoptes.zooniverse.org',
+  staging: 'https://panoptes-staging.zooniverse.org',
+  development: 'https://panoptes-staging.zooniverse.org',
+};
 
 // determine environment
 var envFromShell = process.env.NODE_ENV;
@@ -35,18 +41,8 @@ if (!env.match(/^(production|staging|development)$/)) {
     'try setting NODE_ENV to "staging" instead of "'+envFromShell+'".');
 }
 
-// Try and match the location.search property against a regex. Basically mimics
-// the CoffeeScript existential operator, in case we're not in a browser.
-function locationMatch(regex) {
-  var match;
-  if (typeof location !== 'undefined' && location !== null) {
-    match = location.search.match(regex);
-  }
-
-  return (match && match[1]) ? match[1] : undefined;
-}
-
 module.exports = {
   host: host,
-	client: client
+	client: client,
+  oauthHost: OAUTH_HOSTS[env]
 };

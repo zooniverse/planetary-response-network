@@ -1,36 +1,7 @@
 'use strict';
 const request = require('request');
 const JsonApiClient = require('json-api-client');
-
-var DEFAULT_ENV = 'staging';
-
-var API_HOSTS = {
-  production: 'https://www.zooniverse.org',
-  staging: 'https://panoptes-staging.zooniverse.org',
-  development: 'https://panoptes-staging.zooniverse.org',
-};
-
-var OAUTH_HOSTS = {
-  production: 'https://panoptes.zooniverse.org',
-  staging: 'https://panoptes-staging.zooniverse.org',
-  development: 'https://panoptes-staging.zooniverse.org',
-};
-
-var hostFromShell = process.env.PANOPTES_API_HOST;
-var appFromShell = process.env.PANOPTES_API_APPLICATION;
-var envFromShell = process.env.NODE_ENV;
-
-var env = envFromShell || DEFAULT_ENV;
-
-if (!env.match(/^(production|staging|development)$/)) {
-  throw new Error('Panoptes Javascript Client Error: Invalid Environment; ' +
-    'try setting NODE_ENV to "staging" instead of "'+envFromShell+'".');
-}
-
-const config = {
-  host: hostFromShell || API_HOSTS[env],
-  oauthHost: OAUTH_HOSTS[env]
-};
+const config = require('../config');
 
 // How many seconds before expiry to consider refreshing access tokens
 const REFRESH_TOKEN_BUFFER = 900;
@@ -62,7 +33,7 @@ class PanoptesClientFactory {
   getClientForUser(user) {
     const userId = user.get('id');
     if (!this.clients[userId]) {
-      let client = new JsonApiClient(config.host + '/api', {
+      let client = new JsonApiClient(config.oauthHost + '/api', {
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.api+json; version=1'
       });
@@ -93,7 +64,7 @@ function ensureAccessToken(user, done) {
     };
 
     request.post({
-      url: config.host + '/oauth/token',
+      url: config.oauthHost + '/oauth/token',
       headers: JSON_HEADERS,
       body: JSON.stringify(data)
     }, (err, res, body) => {

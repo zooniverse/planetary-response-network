@@ -25,3 +25,9 @@ services:
       - "PANOPTES_API_APPLICATION"
       - "PANOPTES_API_SECRET"
       - "PRN_HOST"
+
+  cli:
+    image: zooniverse/planetary-response-network
+    volumes:
+      - ${HOME}:${HOME}
+    command: bash

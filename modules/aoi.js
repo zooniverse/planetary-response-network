@@ -1,7 +1,7 @@
 'use strict';
 const fs = require('fs');
-const jsdom = require('jsdom').jsdom;
 const toGeoJson = require('togeojson');
+const DOMParser = require('xmldom').DOMParser;
 
 class AOI {
   constructor(file) {
@@ -10,7 +10,7 @@ class AOI {
 
   set file(file) {
     this._file = file;
-    this.kml = jsdom(fs.readFileSync(file));
+    this.kml = new DOMParser().parseFromString(fs.readFileSync(file, 'utf8'));
   }
 
   get file() {
@@ -19,6 +19,8 @@ class AOI {
 
   get bounds() {
     var geoJSON = toGeoJson.kml(this.kml);
+    // console.log(geoJSON);
+    // console.log(geoJSON.features[0].geometry.coordinates[0]);
     return geoJSON.features[0].geometry.coordinates[0];
   }
 
